@@ -1,9 +1,9 @@
-import { S3_BUCKET_NAME, s3Client } from "@/lib/s3";
+import { S3_BUCKET_NAME, s3Client } from "@/lib/services/s3";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth-middleware";
+import { requireAuth } from "@/lib/auth/middleware";
 
 // POST /api/upload/presigned-url - Get presigned URL for S3 upload
 export async function POST(request: NextRequest) {

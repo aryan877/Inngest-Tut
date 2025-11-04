@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { MarkdownEditor } from "@/components/ui/markdown-editor";
 import { VoteButtons } from "@/components/vote-buttons";
-import { useSession } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth/client";
 import { useCreateAnswer, useAcceptAnswer, useDeleteAnswer } from "@/lib/mutations";
 import { useQuestion } from "@/lib/queries";
 import { submitAnswerSchema } from "@/lib/validations/question";

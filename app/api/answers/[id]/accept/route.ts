@@ -1,7 +1,7 @@
-import { requireAuth } from "@/lib/auth-middleware";
+import { requireAuth } from "@/lib/auth/middleware";
 import { db } from "@/lib/db";
-import { inngest } from "@/lib/inngest";
-import { answers, questions, userProfile } from "@/lib/schema";
+import { inngest } from "@/lib/services/inngest";
+import { answers, questions, userProfile } from "@/lib/db/schema";
 import { and, eq, not, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 

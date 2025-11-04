@@ -89,7 +89,7 @@ export const queryKeys = {
 } as const;
 
 // Import Drizzle schema types (type-safe from actual database schema)
-import type { answers, questions, tags, user, userProfile } from "@/lib/schema";
+import type { answers, questions, tags, user, userProfile } from "@/lib/db/schema";
 
 // Use Drizzle's built-in type inference - no duplication needed!
 export type User = typeof user.$inferSelect;

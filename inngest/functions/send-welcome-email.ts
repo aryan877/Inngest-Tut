@@ -1,4 +1,4 @@
-import { inngest } from "@/lib/inngest";
+import { inngest } from "@/lib/services/inngest";
 import { Resend } from "resend";
 
 const getResendClient = () => {

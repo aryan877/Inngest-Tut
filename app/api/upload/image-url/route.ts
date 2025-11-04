@@ -1,8 +1,8 @@
-import { S3_BUCKET_NAME, s3Client } from "@/lib/s3";
+import { S3_BUCKET_NAME, s3Client } from "@/lib/services/s3";
 import { GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth } from "@/lib/auth-middleware";
+import { requireAuth } from "@/lib/auth/middleware";
 
 // POST /api/upload/image-url - Get presigned URL for viewing S3 image
 export async function POST(request: NextRequest) {

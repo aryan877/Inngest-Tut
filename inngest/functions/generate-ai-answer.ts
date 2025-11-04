@@ -1,7 +1,7 @@
 import { apiRequest } from "@/lib/api";
 import { db } from "@/lib/db";
-import { inngest } from "@/lib/inngest";
-import { answers, questions, questionTags, tags } from "@/lib/schema";
+import { inngest } from "@/lib/services/inngest";
+import { answers, questions, questionTags, tags } from "@/lib/db/schema";
 import { eq, sql } from "drizzle-orm";
 
 export const generateAIAnswer = inngest.createFunction(

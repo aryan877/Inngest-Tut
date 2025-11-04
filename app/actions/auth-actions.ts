@@ -1,6 +1,6 @@
 "use server";
 
-import { inngest } from "@/lib/inngest";
+import { inngest } from "@/lib/services/inngest";
 
 export async function sendWelcomeEmailEvent(
   userId: string,

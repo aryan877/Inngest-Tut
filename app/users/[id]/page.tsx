@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser } from "@/lib/queries";
 import { formatDistanceToNow } from "date-fns";
 import { useParams } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
+import { useSession } from "@/lib/auth/client";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 

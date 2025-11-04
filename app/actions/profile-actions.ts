@@ -2,10 +2,10 @@
 
 import { headers } from "next/headers";
 import { db } from "@/lib/db";
-import { userProfile } from "@/lib/schema";
+import { userProfile } from "@/lib/db/schema";
 import { updateProfileSchema } from "@/lib/validations/profile";
 import { eq } from "drizzle-orm";
-import { auth } from "@/lib/auth";
+import { auth } from "@/lib/auth/config";
 import { z } from "zod";
 
 export async function updateProfile(

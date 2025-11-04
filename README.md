@@ -195,7 +195,7 @@ A production-ready Q&A platform (like Stack Overflow) with AI-powered instant an
    - Deployment
 
 **Teaching Tips:**
-- Start with the **database schema** (`lib/schema.ts`) - it's the foundation
+- Start with the **database schema** (`lib/db/schema.ts`) - it's the foundation
 - Show the **request flow**: Component → API Route → Database → Inngest
 - Emphasize **type safety**: TypeScript → Drizzle → Zod validation
 - Demonstrate **TanStack Query** benefits: caching, optimistic updates
@@ -315,7 +315,7 @@ export const generateAIAnswer = inngest.createFunction(
 
 #### Pattern 4: Drizzle Schema (Type-safe Database)
 ```typescript
-// lib/schema.ts
+// lib/db/schema.ts
 import { pgTable, text, integer, timestamp, boolean, index } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -615,31 +615,34 @@ project/
 │       └── send-answer-accepted-notification.ts  # Accepted answer email
 │
 ├── lib/                          # Core utilities
-│   ├── api/
+│   ├── auth/                     # 🔐 Authentication (Better Auth)
+│   │   ├── config.ts             # Better Auth server config
+│   │   ├── client.ts             # Better Auth React hooks
+│   │   └── middleware.ts         # Auth middleware for protected routes
+│   ├── db/                       # 🗄️ Database layer (Drizzle ORM)
+│   │   ├── index.ts              # Neon Postgres connection
+│   │   └── schema.ts             # Database schema & types
+│   ├── services/                 # 🔧 External service configurations
+│   │   ├── inngest.ts            # Inngest client (background jobs)
+│   │   ├── s3.ts                 # AWS S3 client (image uploads)
+│   │   └── rate-limit.ts         # Upstash Redis rate limiter
+│   ├── api/                      # 🌐 API client & types
 │   │   └── index.ts              # API client, query keys, Zod types
-│   ├── queries/                  # TanStack Query (GET operations)
+│   ├── queries/                  # 📥 TanStack Query (GET operations)
 │   │   ├── questions.ts          # useQuestions, useQuestion
 │   │   ├── users.ts              # useUser
 │   │   ├── search.ts             # useSearch
-│   │   └── images.ts             # usePresignedUrl
-│   ├── mutations/                # TanStack Mutations (POST/PUT/DELETE)
+│   │   └── images.ts             # useImageUrl, useImageUrls
+│   ├── mutations/                # 📤 TanStack Mutations (POST/PUT/DELETE)
 │   │   ├── questions.ts          # useCreateQuestion
 │   │   ├── answers.ts            # useCreateAnswer, useAcceptAnswer, useDeleteAnswer
 │   │   ├── votes.ts              # useVote
-│   │   └── images.ts             # useUploadImages
-│   ├── validations/              # Zod validation schemas
-│   │   ├── question.ts           # Question/answer validation
+│   │   └── images.ts             # useUploadImage
+│   ├── validations/              # ✅ Zod validation schemas
+│   │   ├── auth.ts               # Auth validation
 │   │   ├── profile.ts            # Profile validation
-│   │   └── auth.ts               # Auth validation
-│   ├── schema.ts                 # Drizzle database schema
-│   ├── db.ts                     # Neon Postgres connection
-│   ├── auth.ts                   # Better Auth server config
-│   ├── auth-client.ts            # Better Auth React hooks
-│   ├── auth-middleware.ts        # Auth middleware for protected routes
-│   ├── inngest.ts                # Inngest client
-│   ├── s3.ts                     # AWS S3 client
-│   ├── rate-limit.ts             # Upstash Redis rate limiter
-│   └── utils.ts                  # Helper functions (cn, etc.)
+│   │   └── question.ts           # Question/answer validation
+│   └── utils.ts                  # 🛠️ Helper functions (cn, etc.)
 │
 ├── drizzle/                      # Database migrations
 ├── public/                       # Static assets
@@ -1015,7 +1018,7 @@ export default async function middleware(request: NextRequest) {
 
 **Example: Add "Follow User" feature**
 
-1. **Update Database Schema** (`lib/schema.ts`):
+1. **Update Database Schema** (`lib/db/schema.ts`):
 ```typescript
 export const follows = pgTable("follows", {
   id: text("id").primaryKey(),

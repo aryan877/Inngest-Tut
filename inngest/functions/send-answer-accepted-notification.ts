@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
-import { inngest } from "@/lib/inngest";
+import { inngest } from "@/lib/services/inngest";
 import {
   questions,
   user as userTable,
   answers,
-} from "@/lib/schema";
+} from "@/lib/db/schema";
 import { eq } from "drizzle-orm";
 import { Resend } from "resend";
 
