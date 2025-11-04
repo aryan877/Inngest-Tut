@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest";
-import { notifications, questions, user as userTable } from "@/lib/schema";
+import { questions, user as userTable } from "@/lib/schema";
 import { eq } from "drizzle-orm";
 import { Resend } from "resend";
 
@@ -38,18 +38,7 @@ export const sendAnswerNotification = inngest.createFunction(
       return { success: false, reason: "Question or user not found" };
     }
 
-    // Step 2: Create in-app notification
-    await step.run("create-notification", async () => {
-      await db.insert(notifications).values({
-        userId,
-        type: "answer_received",
-        title: "New Answer on Your Question",
-        message: `Your question "${details.question!.title}" received a ${answerType} answer.`,
-        link: `/questions/${questionId}`,
-      });
-    });
-
-    // Step 3: Send email notification
+    // Send email notification
     const emailSent = await step.run("send-email", async () => {
       const resend = getResendClient();
       if (!resend) {
@@ -73,6 +62,6 @@ export const sendAnswerNotification = inngest.createFunction(
       return true;
     });
 
-    return { success: true, notificationSent: true, emailSent };
+    return { success: true, emailSent };
   }
 );

@@ -55,8 +55,9 @@ export default function SignUpPage() {
       }
 
       router.push("/");
-    } catch (err: any) {
-      setError(err.message || "Failed to create account");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to create account";
+      setError(errorMessage);
     }
   };
 
@@ -66,8 +67,9 @@ export default function SignUpPage() {
         provider: "github",
         callbackURL: "/",
       });
-    } catch (err: any) {
-      setError(err.message || "Failed to sign up with GitHub");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to sign up with GitHub";
+      setError(errorMessage);
     }
   };
 
@@ -77,8 +79,9 @@ export default function SignUpPage() {
         provider: "google",
         callbackURL: "/",
       });
-    } catch (err: any) {
-      setError(err.message || "Failed to sign up with Google");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to sign up with Google";
+      setError(errorMessage);
     }
   };
 

@@ -6,6 +6,7 @@ import { useImageUrls } from "@/lib/queries";
 import { Loader2, Upload, X } from "lucide-react";
 import Image from "next/image";
 import { useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 
 // Component props type used only in this component
 interface ImageUploadProps {
@@ -43,7 +44,7 @@ export function ImageUpload({
     const files = Array.from(e.target.files || []);
 
     if (images.length + files.length > maxImages) {
-      alert(`You can only upload up to ${maxImages} images`);
+      toast.error(`You can only upload up to ${maxImages} images`);
       return;
     }
 
@@ -57,9 +58,9 @@ export function ImageUpload({
       const newImages = [...images, ...uploadedUrls];
       setImages(newImages);
       onImagesChange(newImages);
-    } catch (error) {
-      console.error("Upload error:", error);
-      alert("Failed to upload images");
+      toast.success("Images uploaded successfully!");
+    } catch {
+      // Error is already handled by mutation's onError (shows toast)
     } finally {
       setUploading(false);
       if (fileInputRef.current) {

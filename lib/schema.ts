@@ -233,27 +233,6 @@ export const answerVotes = pgTable(
   })
 );
 
-// Notifications
-export const notificationTypeEnum = pgEnum("notification_type", [
-  "answer_received",
-  "answer_accepted",
-  "comment_received",
-  "upvote_milestone",
-]);
-
-export const notifications = pgTable("notifications", {
-  id: serial("id").primaryKey(),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  type: notificationTypeEnum("type").notNull(),
-  title: text("title").notNull(),
-  message: text("message").notNull(),
-  link: text("link"),
-  read: boolean("read").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
-
 // ============================================
 // RELATIONS
 // ============================================
@@ -264,7 +243,6 @@ export const userRelations = relations(user, ({ one, many }) => ({
   answers: many(answers),
   questionVotes: many(questionVotes),
   answerVotes: many(answerVotes),
-  notifications: many(notifications),
 }));
 
 export const userProfileRelations = relations(userProfile, ({ one }) => ({
@@ -318,13 +296,6 @@ export const answerVoteRelations = relations(answerVotes, ({ one }) => ({
   }),
   user: one(user, {
     fields: [answerVotes.userId],
-    references: [user.id],
-  }),
-}));
-
-export const notificationRelations = relations(notifications, ({ one }) => ({
-  user: one(user, {
-    fields: [notifications.userId],
     references: [user.id],
   }),
 }));

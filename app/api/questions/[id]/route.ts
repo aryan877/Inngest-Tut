@@ -1,3 +1,4 @@
+import { requireAuth } from "@/lib/auth-middleware";
 import { db } from "@/lib/db";
 import { answers, questions } from "@/lib/schema";
 import { and, desc, eq } from "drizzle-orm";
@@ -33,7 +34,11 @@ export async function GET(
         },
         answers: {
           where: eq(answers.isDeleted, false),
-          orderBy: [desc(answers.votes), desc(answers.createdAt)],
+          orderBy: [
+            desc(answers.isAccepted),
+            desc(answers.votes),
+            desc(answers.createdAt),
+          ],
           with: {
             author: {
               columns: {
@@ -81,61 +86,20 @@ export async function GET(
   }
 }
 
-// PATCH /api/questions/[id] - Update question
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    const questionId = parseInt(id);
-    const body = await request.json();
-    const { title, body: questionBody, userId } = body;
-
-    // Verify ownership
-    const question = await db.query.questions.findFirst({
-      where: eq(questions.id, questionId),
-    });
-
-    if (!question || question.authorId !== userId) {
-      return NextResponse.json(
-        { success: false, error: "Unauthorized" },
-        { status: 403 }
-      );
-    }
-
-    const [updated] = await db
-      .update(questions)
-      .set({
-        title,
-        body: questionBody,
-        updatedAt: new Date(),
-      })
-      .where(eq(questions.id, questionId))
-      .returning();
-
-    return NextResponse.json({
-      success: true,
-      data: updated,
-    });
-  } catch (error) {
-    console.error("Error updating question:", error);
-    return NextResponse.json(
-      { success: false, error: "Failed to update question" },
-      { status: 500 }
-    );
-  }
-}
-
 // DELETE /api/questions/[id] - Soft delete question
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const authResult = await requireAuth(request);
+    if (authResult.error) {
+      return authResult.error;
+    }
+    const userId = authResult.userId;
+
     const { id } = await params;
     const questionId = parseInt(id);
-    const { userId } = await request.json();
 
     // Verify ownership
     const question = await db.query.questions.findFirst({

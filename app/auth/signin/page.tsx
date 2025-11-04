@@ -40,8 +40,9 @@ export default function SignInPage() {
         password: formData.password,
       });
       router.push("/");
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to sign in";
+      setError(errorMessage);
     }
   };
 
@@ -51,8 +52,9 @@ export default function SignInPage() {
         provider: "github",
         callbackURL: "/",
       });
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in with GitHub");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to sign in with GitHub";
+      setError(errorMessage);
     }
   };
 
@@ -62,8 +64,9 @@ export default function SignInPage() {
         provider: "google",
         callbackURL: "/",
       });
-    } catch (err: any) {
-      setError(err.message || "Failed to sign in with Google");
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to sign in with Google";
+      setError(errorMessage);
     }
   };
 

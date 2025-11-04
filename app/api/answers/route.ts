@@ -1,3 +1,4 @@
+import { requireAuth } from "@/lib/auth-middleware";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest";
 import { answers, userProfile } from "@/lib/schema";
@@ -7,10 +8,15 @@ import { NextRequest, NextResponse } from "next/server";
 // POST /api/answers - Create a new answer
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { questionId, content, userId } = body;
+    const authResult = await requireAuth(request);
+    if (authResult.error) return authResult.error;
 
-    if (!questionId || !content || !userId) {
+    const { userId } = authResult;
+
+    const body = await request.json();
+    const { questionId, content } = body;
+
+    if (!questionId || !content) {
       return NextResponse.json(
         { success: false, error: "Missing required fields" },
         { status: 400 }
@@ -20,7 +26,7 @@ export async function POST(request: NextRequest) {
     const [newAnswer] = await db
       .insert(answers)
       .values({
-        questionId,
+        questionId: parseInt(questionId),
         content,
         authorId: userId,
         isAiGenerated: false,

@@ -38,6 +38,7 @@ export function MarkdownEditor({
       <div className="flex items-center justify-between bg-muted px-3 py-2 border-b border-border">
         <div className="flex items-center gap-2">
           <Button
+            type="button"
             variant="ghost"
             size="sm"
             onClick={() => setShowPreview(false)}
@@ -50,6 +51,7 @@ export function MarkdownEditor({
             Edit
           </Button>
           <Button
+            type="button"
             variant="ghost"
             size="sm"
             onClick={() => setShowPreview(true)}
@@ -85,22 +87,21 @@ export function MarkdownEditor({
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeRaw]}
                   components={{
-                    code({ node, inline, className, children, ...props }: any) {
+                    code(props: React.ClassAttributes<HTMLElement> & React.HTMLAttributes<HTMLElement> & { inline?: boolean }) {
+                      const { className, children, inline } = props;
                       const match = /language-(\w+)/.exec(className || "");
                       return !inline && match ? (
                         <SyntaxHighlighter
-                          style={vscDarkPlus}
+                          style={vscDarkPlus as { [key: string]: React.CSSProperties }}
                           language={match[1]}
                           PreTag="div"
                           className="rounded-md my-4"
-                          {...props}
                         >
                           {String(children).replace(/\n$/, "")}
                         </SyntaxHighlighter>
                       ) : (
                         <code
                           className="bg-muted text-foreground px-1.5 py-0.5 rounded text-sm font-mono"
-                          {...props}
                         >
                           {children}
                         </code>

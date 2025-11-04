@@ -54,89 +54,103 @@ export async function POST(
       );
     }
 
+    // Note: Neon HTTP driver doesn't support db.transaction()
+    // Using db.batch() to execute multiple operations atomically
     if (existingVote) {
       // If same vote type, remove the vote (toggle off)
       if (existingVote.voteType === voteType) {
-        await db
-          .delete(questionVotes)
-          .where(
-            and(
-              eq(questionVotes.questionId, questionId),
-              eq(questionVotes.userId, userId)
-            )
-          );
-
-        // Update question votes count atomically
         const voteChange = voteType === "upvote" ? -1 : 1;
-        await db
-          .update(questions)
-          .set({ votes: sql`${questions.votes} + ${voteChange}` })
-          .where(eq(questions.id, questionId));
-
-        // Update author reputation atomically
         const repChange = voteType === "upvote" ? -5 : 2;
-        await db
-          .update(userProfile)
-          .set({
-            reputation: sql`${userProfile.reputation} + ${repChange}`,
-          })
-          .where(eq(userProfile.userId, question.authorId));
+
+        await db.batch([
+          db
+            .delete(questionVotes)
+            .where(
+              and(
+                eq(questionVotes.questionId, questionId),
+                eq(questionVotes.userId, userId)
+              )
+            ),
+          db
+            .update(questions)
+            .set({ votes: sql`${questions.votes} + ${voteChange}` })
+            .where(eq(questions.id, questionId)),
+          db
+            .update(userProfile)
+            .set({
+              reputation: sql`${userProfile.reputation} + ${repChange}`,
+            })
+            .where(eq(userProfile.userId, question.authorId)),
+        ]);
       } else {
         // Change vote type
-        await db
-          .update(questionVotes)
-          .set({ voteType: voteType as "upvote" | "downvote" })
-          .where(
-            and(
-              eq(questionVotes.questionId, questionId),
-              eq(questionVotes.userId, userId)
-            )
-          );
-
-        // Update question votes count atomically
         const voteChange = voteType === "upvote" ? 2 : -2;
-        await db
-          .update(questions)
-          .set({ votes: sql`${questions.votes} + ${voteChange}` })
-          .where(eq(questions.id, questionId));
-
-        // Update author reputation atomically
         const repChange = voteType === "upvote" ? 7 : -7;
-        await db
-          .update(userProfile)
-          .set({
-            reputation: sql`${userProfile.reputation} + ${repChange}`,
-          })
-          .where(eq(userProfile.userId, question.authorId));
+
+        await db.batch([
+          db
+            .update(questionVotes)
+            .set({ voteType: voteType as "upvote" | "downvote" })
+            .where(
+              and(
+                eq(questionVotes.questionId, questionId),
+                eq(questionVotes.userId, userId)
+              )
+            ),
+          db
+            .update(questions)
+            .set({ votes: sql`${questions.votes} + ${voteChange}` })
+            .where(eq(questions.id, questionId)),
+          db
+            .update(userProfile)
+            .set({
+              reputation: sql`${userProfile.reputation} + ${repChange}`,
+            })
+            .where(eq(userProfile.userId, question.authorId)),
+        ]);
       }
     } else {
       // New vote
-      await db.insert(questionVotes).values({
-        questionId,
-        userId,
-        voteType: voteType as "upvote" | "downvote",
-      });
-
-      // Update question votes count atomically
       const voteChange = voteType === "upvote" ? 1 : -1;
-      await db
-        .update(questions)
-        .set({ votes: sql`${questions.votes} + ${voteChange}` })
-        .where(eq(questions.id, questionId));
-
-      // Update author reputation atomically
       const repChange = voteType === "upvote" ? 5 : -2;
-      await db
-        .update(userProfile)
-        .set({
-          reputation: sql`${userProfile.reputation} + ${repChange}`,
-        })
-        .where(eq(userProfile.userId, question.authorId));
+
+      await db.batch([
+        db.insert(questionVotes).values({
+          questionId,
+          userId,
+          voteType: voteType as "upvote" | "downvote",
+        }),
+        db
+          .update(questions)
+          .set({ votes: sql`${questions.votes} + ${voteChange}` })
+          .where(eq(questions.id, questionId)),
+        db
+          .update(userProfile)
+          .set({
+            reputation: sql`${userProfile.reputation} + ${repChange}`,
+          })
+          .where(eq(userProfile.userId, question.authorId)),
+      ]);
     }
+
+    // Fetch updated question with new vote count
+    const updatedQuestion = await db.query.questions.findFirst({
+      where: eq(questions.id, questionId),
+    });
+
+    // Check user's current vote after the operation
+    const currentUserVote = await db.query.questionVotes.findFirst({
+      where: and(
+        eq(questionVotes.questionId, questionId),
+        eq(questionVotes.userId, userId)
+      ),
+    });
 
     return NextResponse.json({
       success: true,
       message: "Vote recorded",
+      votes: updatedQuestion?.votes || 0,
+      userVote: currentUserVote?.voteType || null,
     });
   } catch (error) {
     console.error("Error voting on question:", error);

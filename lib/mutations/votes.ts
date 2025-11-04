@@ -1,17 +1,16 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryKeys, apiRequest } from "@/lib/api";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/api";
 import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface VoteData {
   itemId: string;
   itemType: "question" | "answer";
   voteType: "upvote" | "downvote";
-  questionId?: string; // Required for answer votes to invalidate the parent question
 }
 
 export const useVote = () => {
-  const queryClient = useQueryClient();
   const { data: session } = useSession();
   const router = useRouter();
 
@@ -35,21 +34,13 @@ export const useVote = () => {
         }),
       });
     },
-    onSuccess: (_, { itemId, itemType, questionId }) => {
-      // Invalidate related queries
-      if (itemType === "question") {
-        queryClient.invalidateQueries({ queryKey: queryKeys.questions.detail(itemId) });
-        queryClient.invalidateQueries({ queryKey: queryKeys.questions.lists() });
-      } else if (itemType === "answer") {
-        queryClient.invalidateQueries({ queryKey: queryKeys.answers.detail(itemId) });
-        // Invalidate the parent question if questionId is provided
-        if (questionId) {
-          queryClient.invalidateQueries({ queryKey: queryKeys.questions.detail(questionId) });
-        }
-      }
+    onSuccess: () => {
+      toast.success("Vote recorded!");
     },
     onError: (error) => {
       console.error("Failed to vote:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to vote";
+      toast.error(errorMessage);
     },
   });
 };

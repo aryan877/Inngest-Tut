@@ -16,11 +16,29 @@ export async function apiRequest<T>(
     ...options,
   });
 
-  if (!response.ok) {
-    throw new Error(`API Error: ${response.status} ${response.statusText}`);
+  // Always try to parse the JSON response for both success and error cases
+  let data;
+  try {
+    data = await response.json();
+  } catch (error) {
+    // If JSON parsing fails and response is not ok, throw a generic error
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+    }
+    throw new Error("Failed to parse response");
   }
 
-  return response.json();
+  // Check if response is ok after parsing
+  if (!response.ok) {
+    // Extract user-friendly error message from response body
+    const errorMessage =
+      data?.error ||
+      data?.message ||
+      `API Error: ${response.status} ${response.statusText}`;
+    throw new Error(errorMessage);
+  }
+
+  return data;
 }
 
 // Hierarchical query key factory following TanStack Query best practices
@@ -104,18 +122,4 @@ export type UserWithProfile = User & {
     questions: number;
     answers: number;
   };
-};
-
-// API response type for user profile endpoint
-export type UserProfileApiResponse = {
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    image: string | null;
-    createdAt: Date;
-  };
-  profile: UserProfile | null;
-  questions: Question[];
-  answers: AnswerWithQuestion[];
 };

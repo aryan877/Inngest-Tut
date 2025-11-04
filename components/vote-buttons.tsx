@@ -34,37 +34,20 @@ export function VoteButtons({
       return;
     }
 
-    // Optimistic update
-    const previousVotes = votes;
-    const previousUserVote = userVote;
-
-    // Update local state optimistically
-    if (userVote === voteType) {
-      // Toggle off
-      setVotes(votes + (voteType === "upvote" ? -1 : 1));
-      setUserVote(null);
-    } else if (userVote) {
-      // Change vote
-      setVotes(votes + (voteType === "upvote" ? 2 : -2));
-      setUserVote(voteType);
-    } else {
-      // New vote
-      setVotes(votes + (voteType === "upvote" ? 1 : -1));
-      setUserVote(voteType);
-    }
-
     try {
-      await voteMutation.mutateAsync({
+      // Wait for API response which includes updated vote counts
+      const response = (await voteMutation.mutateAsync({
         itemId: itemId.toString(), // Convert number to string for API
         itemType,
         voteType,
-      });
-    } catch (error: any) {
-      // Revert optimistic update on error
-      setVotes(previousVotes);
-      setUserVote(previousUserVote);
-      console.error("Error voting:", error);
-      alert(error.message || "Failed to vote");
+      })) as { votes: number; userVote: "upvote" | "downvote" | null };
+
+      // Update local state with values from API response
+      setVotes(response.votes);
+      setUserVote(response.userVote);
+    } catch {
+      // Error is already handled by mutation's onError (shows toast)
+      // No alert, no console.error - just let the toast handle it
     }
   };
 

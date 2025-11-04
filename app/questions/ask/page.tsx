@@ -42,10 +42,9 @@ export default function AskQuestionPage() {
   const onSubmit = async (formData: AskQuestionFormData) => {
     try {
       await createQuestionMutation.mutateAsync(formData);
-      // Navigation is handled automatically by the mutation success handler
-    } catch (error) {
-      console.error("Error creating question:", error);
-      alert("Failed to create question. Please try again.");
+      // Navigation and toast notification handled by mutation
+    } catch {
+      // Error already handled by mutation's onError (shows toast)
     }
   };
 

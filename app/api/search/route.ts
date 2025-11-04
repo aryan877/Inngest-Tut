@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
     if (!query || query.trim().length < 2) {
       return NextResponse.json(
-        { error: "Query must be at least 2 characters" },
+        { success: false, error: "Query must be at least 2 characters" },
         { status: 400 }
       );
     }
@@ -64,7 +64,7 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Search error:", error);
     return NextResponse.json(
-      { error: "Failed to search questions" },
+      { success: false, error: "Failed to search questions" },
       { status: 500 }
     );
   }

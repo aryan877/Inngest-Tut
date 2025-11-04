@@ -1,7 +1,7 @@
-import { inngest } from "@/lib/inngest";
 import { apiRequest } from "@/lib/api";
 import { db } from "@/lib/db";
-import { questions, answers, tags, questionTags } from "@/lib/schema";
+import { inngest } from "@/lib/inngest";
+import { answers, questions, questionTags, tags } from "@/lib/schema";
 import { eq, sql } from "drizzle-orm";
 
 export const generateAIAnswer = inngest.createFunction(
@@ -31,7 +31,11 @@ export const generateAIAnswer = inngest.createFunction(
           });
           urls.push((result as { url: string }).url);
         } catch (error) {
-          console.error("Error generating presigned URL for image:", imageKey, error);
+          console.error(
+            "Error generating presigned URL for image:",
+            imageKey,
+            error
+          );
         }
       }
       return urls;
@@ -62,19 +66,27 @@ export const generateAIAnswer = inngest.createFunction(
       let content = tagsResult.choices[0].message.content || "[]";
 
       // Remove markdown code blocks if present (```json ... ```)
-      content = content.replace(/^```(?:json)?\s*\n?/gm, "").replace(/\n?```$/gm, "").trim();
+      content = content
+        .replace(/^```(?:json)?\s*\n?/gm, "")
+        .replace(/\n?```$/gm, "")
+        .trim();
 
       // Parse the JSON array
-      const parsed = JSON.parse(content);
+      const parsed: string[] = JSON.parse(content);
 
       if (Array.isArray(parsed)) {
-        generatedTags = parsed.map((tag: any) => String(tag).toLowerCase());
+        generatedTags = parsed.map((tag) => String(tag).toLowerCase());
       } else {
         console.warn("Expected array of tags, got:", typeof parsed);
         generatedTags = [];
       }
     } catch (e) {
-      console.error("Failed to parse tags:", e, "Content:", tagsResult.choices[0].message.content);
+      console.error(
+        "Failed to parse tags:",
+        e,
+        "Content:",
+        tagsResult.choices[0].message.content
+      );
       generatedTags = [];
     }
 
@@ -127,44 +139,41 @@ Format your answer in Markdown.`,
 
     // Step 4: Save to Database
     await step.run("save-to-database", async () => {
-      // Process and save tags
+      // Upsert tags and collect their IDs
+      const tagIds = [];
+
       for (const tagName of generatedTags) {
-        // Create slug from tag name (already lowercase and hyphenated)
         const slug = tagName;
 
-        // Find or create tag
-        let tag = await db.query.tags.findFirst({
-          where: eq(tags.slug, slug),
-        });
-
-        if (!tag) {
-          // Create new tag
-          const [newTag] = await db
-            .insert(tags)
-            .values({
-              name: tagName,
-              slug: slug,
-              usageCount: 1,
-            })
-            .returning();
-          tag = newTag;
-        } else {
-          // Increment usage count for existing tag
-          await db
-            .update(tags)
-            .set({
+        // Upsert tag in a single query
+        const [tag] = await db
+          .insert(tags)
+          .values({
+            name: tagName,
+            slug: slug,
+            usageCount: 1,
+          })
+          .onConflictDoUpdate({
+            target: tags.slug,
+            set: {
               usageCount: sql`${tags.usageCount} + 1`,
-            })
-            .where(eq(tags.id, tag.id));
-        }
+            },
+          })
+          .returning();
 
-        // Link tag to question via junction table
+        tagIds.push(tag.id);
+      }
+
+      // Batch insert all junction table records at once
+      if (tagIds.length > 0) {
         await db
           .insert(questionTags)
-          .values({
-            questionId,
-            tagId: tag.id,
-          })
+          .values(
+            tagIds.map((tagId) => ({
+              questionId,
+              tagId,
+            }))
+          )
           .onConflictDoNothing(); // Prevent duplicate entries
       }
 

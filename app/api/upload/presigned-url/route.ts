@@ -3,16 +3,22 @@ import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { nanoid } from "nanoid";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/auth-middleware";
 
 // POST /api/upload/presigned-url - Get presigned URL for S3 upload
 export async function POST(request: NextRequest) {
   try {
+    const authResult = await requireAuth(request);
+    if (authResult.error) {
+      return authResult.error;
+    }
+
     const body = await request.json();
     const { fileName, fileType } = body;
 
     if (!fileName || !fileType) {
       return NextResponse.json(
-        { error: "Missing fileName or fileType" },
+        { success: false, error: "Missing fileName or fileType" },
         { status: 400 }
       );
     }
@@ -27,7 +33,7 @@ export async function POST(request: NextRequest) {
     ];
     if (!allowedTypes.includes(fileType)) {
       return NextResponse.json(
-        { error: "Invalid file type. Only images are allowed." },
+        { success: false, error: "Invalid file type. Only images are allowed." },
         { status: 400 }
       );
     }
@@ -55,7 +61,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Error generating presigned URL:", error);
     return NextResponse.json(
-      { error: "Failed to generate presigned URL" },
+      { success: false, error: "Failed to generate presigned URL" },
       { status: 500 }
     );
   }

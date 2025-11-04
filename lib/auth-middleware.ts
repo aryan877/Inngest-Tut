@@ -27,26 +27,3 @@ export async function requireAuth(request: NextRequest) {
     session: session.session,
   };
 }
-
-/**
- * Optional auth - returns session if available
- */
-export async function optionalAuth(request: NextRequest) {
-  const session = await auth.api.getSession({
-    headers: request.headers,
-  });
-
-  if (!session?.user) {
-    return {
-      userId: null,
-      user: null,
-      session: null,
-    };
-  }
-
-  return {
-    userId: session.user.id,
-    user: session.user,
-    session: session.session,
-  };
-}

@@ -18,5 +18,4 @@ export const submitAnswerSchema = z.object({
     .string()
     .min(1, "Answer content is required")
     .min(30, "Answer must be at least 30 characters to be helpful"),
-  images: z.array(z.string()),
 });

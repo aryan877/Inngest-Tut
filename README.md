@@ -155,7 +155,8 @@ project/
 │   └── functions/
 │       ├── generate-ai-answer.ts  # GPT-5 answer generation with vision
 │       ├── send-welcome-email.ts  # Welcome email
-│       └── send-answer-notification.ts
+│       ├── send-answer-notification.ts  # New answer email alerts
+│       └── send-answer-accepted-notification.ts  # Accepted answer email
 ├── lib/                   # Utility files
 │   ├── api/              # Centralized API & query management
 │   │   ├── index.ts      # API client, Zod schemas, types
@@ -196,11 +197,13 @@ project/
 This project uses a centralized query management system built with TanStack Query (React Query). All API calls are organized in dedicated folders rather than scattered throughout components.
 
 ### Structure
+
 - **`lib/api/`** - API client, Zod schemas, and type definitions with runtime validation
 - **`lib/queries/`** - Read operations (GET requests) with TanStack Query hooks
 - **`lib/mutations/`** - Write operations (POST, PUT, DELETE) with TanStack Mutation hooks
 
 ### Benefits
+
 - **Type Safety**: Zod schemas provide runtime validation and TypeScript types
 - **Code Organization**: All API logic centralized in dedicated folders
 - **Caching**: Automatic caching, background refetching, and stale-while-revalidate
@@ -241,7 +244,7 @@ const vote = useVote(); // Handles optimistic updates and cache invalidation
 - [x] **Full-text search** (PostgreSQL to_tsvector search)
 - [x] **Rate limiting** (Upstash Redis-based protection)
 - [x] **Centralized query management** (TanStack Query with Zod validation)
-- [ ] Accept answers
+- [x] **Accept answers** (mark best answer, +15 reputation, email notification)
 - [ ] Daily digest emails
 - [ ] Comments on answers
 

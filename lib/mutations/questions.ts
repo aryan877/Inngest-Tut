@@ -1,6 +1,7 @@
+import { apiRequest, queryKeys, type QuestionWithAuthor } from "@/lib/api";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { queryKeys, apiRequest, type QuestionWithAuthor } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 // Mutation function
 const createQuestion = async (data: {
@@ -24,11 +25,15 @@ export const useCreateQuestion = () => {
       // Invalidate questions list to refresh
       queryClient.invalidateQueries({ queryKey: queryKeys.questions.lists() });
 
+      toast.success("Question created successfully!");
+
       // Navigate to the new question
       router.push(`/questions/${response.data.id}`);
     },
     onError: (error) => {
       console.error("Failed to create question:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to create question";
+      toast.error(errorMessage);
     },
   });
 };
