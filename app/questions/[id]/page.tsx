@@ -2,13 +2,15 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { ImageDisplay } from "@/components/image-display";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { MarkdownEditor } from "@/components/ui/markdown-editor";
 import { VoteButtons } from "@/components/vote-buttons";
-import type { Question, SubmitAnswerFormData } from "@/lib/types";
+import type { QuestionWithAuthor, AnswerWithAuthor } from "@/lib/api";
 import { submitAnswerSchema } from "@/lib/validations/question";
+import { useQuestion } from "@/lib/queries";
+import { useCreateAnswer } from "@/lib/mutations";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import { useParams } from "next/navigation";
 import { useState } from "react";
@@ -19,26 +21,24 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 
-async function fetchQuestion(id: string) {
-  const res = await fetch(`/api/questions/${id}`);
-  if (!res.ok) throw new Error("Failed to fetch question");
-  return res.json();
+// Form type used only in this component
+interface SubmitAnswerFormData {
+  content: string;
+  images: string[];
 }
 
 export default function QuestionDetailPage() {
   const params = useParams();
   const questionId = params.id as string;
-  const queryClient = useQueryClient();
   const [submitError, setSubmitError] = useState("");
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["question", questionId],
-    queryFn: () => fetchQuestion(questionId),
-  });
+  const { data, isLoading, error } = useQuestion(questionId);
+  const createAnswerMutation = useCreateAnswer();
 
   const {
-    register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
     reset,
   } = useForm<SubmitAnswerFormData>({
@@ -53,24 +53,14 @@ export default function QuestionDetailPage() {
     setSubmitError("");
 
     try {
-      const res = await fetch(`/api/questions/${questionId}/answers`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: formData.content,
-          images: formData.images,
-        }),
+      await createAnswerMutation.mutateAsync({
+        questionId,
+        content: formData.content,
+        images: formData.images,
       });
 
-      if (!res.ok) {
-        throw new Error("Failed to submit answer");
-      }
-
-      // Reset form and refresh question data
+      // Reset form on successful submission
       reset();
-      queryClient.invalidateQueries({ queryKey: ["question", questionId] });
     } catch (err: any) {
       setSubmitError(
         err.message || "Failed to submit answer. Please try again."
@@ -86,7 +76,7 @@ export default function QuestionDetailPage() {
     return <div>Error loading question</div>;
   }
 
-  const question: Question = data?.data;
+  const question = data?.data;
 
   if (!question) {
     return <div>Question not found</div>;
@@ -146,6 +136,9 @@ export default function QuestionDetailPage() {
                 {question.body}
               </ReactMarkdown>
             </div>
+
+            {/* Display question images */}
+            <ImageDisplay imageKeys={question.images} />
 
             <div className="flex items-center gap-2">
               {question.tags.map((tag) => (
@@ -274,11 +267,12 @@ export default function QuestionDetailPage() {
             <Label htmlFor="content">
               Answer<span className="text-red-500 ml-1">*</span>
             </Label>
-            <Textarea
-              id="content"
-              placeholder="Write your answer here... (Markdown supported)"
-              className="mt-2 min-h-[200px]"
-              {...register("content")}
+            <MarkdownEditor
+              value={watch("content") || ""}
+              onChange={(value) => setValue("content", value)}
+              placeholder="Write your answer here... You can use markdown formatting like **bold**, *italic*, `code`, and more"
+              minHeight="200px"
+              className="mt-2"
             />
             {errors.content && (
               <p className="text-sm text-red-500 mt-1">
@@ -288,10 +282,10 @@ export default function QuestionDetailPage() {
           </div>
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || createAnswerMutation.isPending}
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
           >
-            {isSubmitting ? "Submitting..." : "Submit Answer"}
+            {isSubmitting || createAnswerMutation.isPending ? "Submitting..." : "Submit Answer"}
           </Button>
         </form>
       </div>

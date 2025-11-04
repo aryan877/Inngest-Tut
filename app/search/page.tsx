@@ -3,7 +3,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { SearchResult } from "@/lib/types";
+import { useSearch } from "@/lib/queries";
+import { type QuestionWithAuthor } from "@/lib/api";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2, Search } from "lucide-react";
 import Link from "next/link";
@@ -16,38 +17,12 @@ export default function SearchPage() {
   const initialQuery = searchParams.get("q") || "";
 
   const [query, setQuery] = useState(initialQuery);
-  const [results, setResults] = useState<SearchResult[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [searched, setSearched] = useState(!!initialQuery);
+  const [searchQuery, setSearchQuery] = useState(initialQuery);
 
-  const performSearch = async (searchQuery: string) => {
-    if (searchQuery.trim().length < 2) {
-      return;
-    }
+  // Debounced search query
+  const { data: searchResults, isLoading, error } = useSearch(searchQuery);
 
-    setLoading(true);
-    setSearched(true);
-
-    try {
-      const response = await fetch(
-        `/api/search?q=${encodeURIComponent(searchQuery)}`
-      );
-
-      if (!response.ok) {
-        throw new Error("Search failed");
-      }
-
-      const data = await response.json();
-      setResults(data.results);
-    } catch (error) {
-      console.error("Search error:", error);
-      alert("Failed to search. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (query.trim().length < 2) {
@@ -55,15 +30,15 @@ export default function SearchPage() {
       return;
     }
 
-    await performSearch(query);
+    setSearchQuery(query);
     router.push(`/search?q=${encodeURIComponent(query)}`, { scroll: false });
   };
 
   useEffect(() => {
     if (initialQuery) {
-      performSearch(initialQuery);
+      setSearchQuery(initialQuery);
     }
-  }, []);
+  }, [initialQuery]);
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -82,10 +57,10 @@ export default function SearchPage() {
           />
           <Button
             type="submit"
-            disabled={loading}
+            disabled={isLoading}
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
           >
-            {loading ? (
+            {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
               <Search className="h-4 w-4" />
@@ -95,14 +70,20 @@ export default function SearchPage() {
         </div>
       </form>
 
-      {searched && !loading && (
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-800 dark:text-red-200 px-4 py-3 rounded mb-4">
+          Failed to search. Please try again.
+        </div>
+      )}
+
+      {searchQuery && !isLoading && searchResults && (
         <p className="text-sm text-muted-foreground mb-4">
-          Found {results.length} result{results.length !== 1 ? "s" : ""}
+          Found {searchResults.data.questions.length} result{searchResults.data.questions.length !== 1 ? "s" : ""}
         </p>
       )}
 
       <div className="space-y-4">
-        {results.map((result) => (
+        {searchResults?.data.questions.map((result: QuestionWithAuthor) => (
           <Link key={result.id} href={`/questions/${result.id}`}>
             <div className="bg-card border border-border rounded p-4 hover:shadow-sm transition-shadow">
               <h3 className="text-xl font-semibold mb-2 text-card-foreground">
@@ -133,10 +114,10 @@ export default function SearchPage() {
           </Link>
         ))}
 
-        {searched && !loading && results.length === 0 && (
+        {searchQuery && !isLoading && searchResults && searchResults.data.questions.length === 0 && (
           <div className="text-center py-12">
             <p className="text-muted-foreground">
-              No results found for "{query}"
+              No results found for "{searchQuery}"
             </p>
             <p className="text-sm text-muted-foreground mt-2">
               Try different keywords or ask a new question

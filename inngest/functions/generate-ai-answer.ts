@@ -1,4 +1,5 @@
 import { inngest } from "@/lib/inngest";
+import { apiRequest } from "@/lib/api";
 import { db } from "@/lib/db";
 import { questions, answers, tags, questionTags } from "@/lib/schema";
 import { eq, sql } from "drizzle-orm";
@@ -15,7 +16,28 @@ export const generateAIAnswer = inngest.createFunction(
   async ({ event, step }) => {
     const { questionId, title, body, images, authorId } = event.data;
 
-    // Step 1: AI Tag Generation using GPT-5-mini
+    // Step 1: Generate presigned URLs for images if they exist
+    const imageUrls = await step.run("generate-image-urls", async () => {
+      if (!images || images.length === 0) {
+        return [];
+      }
+
+      const urls = [];
+      for (const imageKey of images) {
+        try {
+          const result = await apiRequest("/api/upload/image-url", {
+            method: "POST",
+            body: JSON.stringify({ key: imageKey }),
+          });
+          urls.push((result as { url: string }).url);
+        } catch (error) {
+          console.error("Error generating presigned URL for image:", imageKey, error);
+        }
+      }
+      return urls;
+    });
+
+    // Step 2: AI Tag Generation using GPT-5-mini
     const tagsResult = await step.ai.infer("generate-tags", {
       model: step.ai.models.openai({
         model: "gpt-5-mini",
@@ -56,7 +78,7 @@ export const generateAIAnswer = inngest.createFunction(
       generatedTags = [];
     }
 
-    // Step 2: AI Answer Generation with Vision Support
+    // Step 3: AI Answer Generation with Vision Support
     // Note: Inngest's types don't support vision content arrays, but the API does
     // We use type assertion to work around this limitation
     type VisionMessageContent =
@@ -67,10 +89,10 @@ export const generateAIAnswer = inngest.createFunction(
         >;
 
     const userMessageContent: VisionMessageContent =
-      images && images.length > 0
+      imageUrls && imageUrls.length > 0
         ? [
             { type: "text" as const, text: `${title}\n\n${body}` },
-            ...images.map((url: string) => ({
+            ...imageUrls.map((url: string) => ({
               type: "image_url" as const,
               image_url: { url },
             })),
@@ -90,7 +112,7 @@ export const generateAIAnswer = inngest.createFunction(
 - Code examples with proper formatting
 - Best practices
 - Potential pitfalls to avoid
-${images && images.length > 0 ? "- Analyze any provided images and reference them in your answer" : ""}
+${imageUrls && imageUrls.length > 0 ? "- Analyze any provided images and reference them in your answer" : ""}
 Format your answer in Markdown.`,
           },
           {
@@ -103,7 +125,7 @@ Format your answer in Markdown.`,
 
     const aiAnswerContent = answerResult.choices[0].message.content;
 
-    // Step 3: Save to Database
+    // Step 4: Save to Database
     await step.run("save-to-database", async () => {
       // Process and save tags
       for (const tagName of generatedTags) {
@@ -163,7 +185,7 @@ Format your answer in Markdown.`,
       });
     });
 
-    // Step 4: Notify User
+    // Step 5: Notify User
     await step.run("send-notification", async () => {
       await inngest.send({
         name: "answer.created",

@@ -4,22 +4,31 @@ import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import type { AskQuestionFormData } from "@/lib/types";
+import { MarkdownEditor } from "@/components/ui/markdown-editor";
 import { askQuestionSchema } from "@/lib/validations/question";
+import { useCreateQuestion } from "@/lib/mutations";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 
+// Form type used only in this component
+interface AskQuestionFormData {
+  title: string;
+  body: string;
+  images: string[];
+}
+
 export default function AskQuestionPage() {
   const router = useRouter();
   const [images, setImages] = useState<string[]>([]);
+  const createQuestionMutation = useCreateQuestion();
 
   const {
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<AskQuestionFormData>({
     resolver: zodResolver(askQuestionSchema),
@@ -32,24 +41,8 @@ export default function AskQuestionPage() {
 
   const onSubmit = async (formData: AskQuestionFormData) => {
     try {
-      const res = await fetch("/api/questions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          title: formData.title,
-          body: formData.body,
-          images: formData.images,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to create question");
-      }
-
-      const data = await res.json();
-      router.push(`/questions/${data.data.id}`);
+      await createQuestionMutation.mutateAsync(formData);
+      // Navigation is handled automatically by the mutation success handler
     } catch (error) {
       console.error("Error creating question:", error);
       alert("Failed to create question. Please try again.");
@@ -91,11 +84,11 @@ export default function AskQuestionPage() {
             Include all the information someone would need to answer your
             question
           </p>
-          <Textarea
-            id="body"
-            placeholder="Describe your problem in detail... (Markdown supported)"
-            className="min-h-[300px]"
-            {...register("body")}
+          <MarkdownEditor
+            value={watch("body") || ""}
+            onChange={(value) => setValue("body", value)}
+            placeholder="Describe your problem in detail... You can use markdown formatting like **bold**, *italic*, `code`, and more"
+            minHeight="300px"
           />
           {errors.body && (
             <p className="text-sm text-red-500 mt-1">{errors.body.message}</p>
@@ -132,10 +125,10 @@ export default function AskQuestionPage() {
         <div className="flex gap-4">
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || createQuestionMutation.isPending}
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
           >
-            {isSubmitting ? "Submitting..." : "Submit Question"}
+            {isSubmitting || createQuestionMutation.isPending ? "Submitting..." : "Submit Question"}
           </Button>
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel

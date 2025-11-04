@@ -2,26 +2,16 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { useQuery } from "@tanstack/react-query";
+import { useUser } from "@/lib/queries";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-
-async function fetchUser(id: string) {
-  const res = await fetch(`/api/users/${id}`);
-  if (!res.ok) throw new Error("Failed to fetch user");
-  return res.json();
-}
 
 export default function UserProfilePage() {
   const params = useParams();
   const userId = params.id as string;
 
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["user", userId],
-    queryFn: () => fetchUser(userId),
-  });
+  const { data, isLoading, error } = useUser(userId);
 
   if (isLoading) {
     return <div className="max-w-5xl mx-auto">Loading profile...</div>;
@@ -60,33 +50,25 @@ export default function UserProfilePage() {
                 <div className="text-2xl font-bold text-card-foreground">
                   {profile?.reputation || 0}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Reputation
-                </div>
+                <div className="text-sm text-muted-foreground">Reputation</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-card-foreground">
                   {profile?.questionsCount || 0}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Questions
-                </div>
+                <div className="text-sm text-muted-foreground">Questions</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-card-foreground">
                   {profile?.answersCount || 0}
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Answers
-                </div>
+                <div className="text-sm text-muted-foreground">Answers</div>
               </div>
               <div>
                 <div className="text-sm font-medium text-card-foreground">
                   {formatDistanceToNow(new Date(user.createdAt))} ago
                 </div>
-                <div className="text-sm text-muted-foreground">
-                  Member for
-                </div>
+                <div className="text-sm text-muted-foreground">Member for</div>
               </div>
             </div>
 

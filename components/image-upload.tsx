@@ -1,10 +1,18 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import type { ImageUploadProps } from "@/lib/types";
+import { useUploadImage } from "@/lib/mutations";
+import { useImageUrls } from "@/lib/queries";
 import { Loader2, Upload, X } from "lucide-react";
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+
+// Component props type used only in this component
+interface ImageUploadProps {
+  maxImages?: number;
+  onImagesChange: (imageUrls: string[]) => void;
+  existingImages?: string[];
+}
 
 export function ImageUpload({
   maxImages = 4,
@@ -15,36 +23,21 @@ export function ImageUpload({
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const uploadToS3 = async (file: File): Promise<string> => {
-    // Get presigned URL
-    const response = await fetch("/api/upload/presigned-url", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        fileName: file.name,
-        fileType: file.type,
-      }),
+  const uploadImageMutation = useUploadImage();
+
+  // Use our centralized query hook to get all image URLs
+  const imageQueries = useImageUrls(images);
+
+  // Convert the array of query results to a key-value map
+  const imageUrls = useMemo(() => {
+    const urls: {[key: string]: string} = {};
+    imageQueries.forEach((query, index) => {
+      if (query.data && images[index]) {
+        urls[images[index]] = query.data.url;
+      }
     });
-
-    if (!response.ok) {
-      throw new Error("Failed to get presigned URL");
-    }
-
-    const { presignedUrl, url } = await response.json();
-
-    // Upload file to S3
-    const uploadResponse = await fetch(presignedUrl, {
-      method: "PUT",
-      headers: { "Content-Type": file.type },
-      body: file,
-    });
-
-    if (!uploadResponse.ok) {
-      throw new Error("Failed to upload file");
-    }
-
-    return url;
-  };
+    return urls;
+  }, [imageQueries, images]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -56,7 +49,7 @@ export function ImageUpload({
 
     setUploading(true);
     try {
-      const uploadPromises = files.map((file) => uploadToS3(file));
+      const uploadPromises = files.map((file) => uploadImageMutation.mutateAsync(file));
       const uploadedUrls = await Promise.all(uploadPromises);
 
       const newImages = [...images, ...uploadedUrls];
@@ -89,13 +82,13 @@ export function ImageUpload({
           accept="image/*"
           multiple
           className="hidden"
-          disabled={uploading || images.length >= maxImages}
+          disabled={uploading || uploadImageMutation.isPending || images.length >= maxImages}
         />
         <Button
           type="button"
           variant="outline"
           onClick={() => fileInputRef.current?.click()}
-          disabled={uploading || images.length >= maxImages}
+          disabled={uploading || uploadImageMutation.isPending || images.length >= maxImages}
         >
           {uploading ? (
             <>
@@ -116,24 +109,36 @@ export function ImageUpload({
 
       {images.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {images.map((imageUrl, index) => (
-            <div key={index} className="relative group">
-              <Image
-                src={imageUrl}
-                alt={`Upload ${index + 1}`}
-                width={200}
-                height={200}
-                className="rounded-lg object-cover w-full h-32"
-              />
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          ))}
+          {images.map((imageKey, index) => {
+            const imageUrl = imageUrls[imageKey];
+            return (
+              <div key={index} className="relative group">
+                {imageUrl ? (
+                  <Image
+                    src={imageUrl}
+                    alt={`Upload ${index + 1}`}
+                    width={200}
+                    height={200}
+                    className="rounded-lg object-cover w-full h-32"
+                    onError={() => {
+                      console.error("Image failed to load:", imageKey);
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-500"></div>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

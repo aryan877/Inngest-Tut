@@ -20,5 +20,3 @@ export const submitAnswerSchema = z.object({
     .min(30, "Answer must be at least 30 characters to be helpful"),
   images: z.array(z.string()),
 });
-
-// Types are imported from @/lib/types

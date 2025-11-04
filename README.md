@@ -157,6 +157,18 @@ project/
 │       ├── send-welcome-email.ts  # Welcome email
 │       └── send-answer-notification.ts
 ├── lib/                   # Utility files
+│   ├── api/              # Centralized API & query management
+│   │   ├── index.ts      # API client, Zod schemas, types
+│   │   ├── queries/      # TanStack Query hooks (GET operations)
+│   │   │   ├── questions.ts
+│   │   │   ├── users.ts
+│   │   │   ├── search.ts
+│   │   │   └── images.ts
+│   │   └── mutations/    # TanStack Mutation hooks (POST/PUT/DELETE)
+│   │       ├── questions.ts
+│   │       ├── answers.ts
+│   │       ├── votes.ts
+│   │       └── images.ts
 │   ├── schema.ts         # Drizzle database schema
 │   ├── db.ts             # Database connection
 │   ├── auth.ts           # Better Auth server config
@@ -179,6 +191,37 @@ project/
 - `npm run db:push` - Push schema to database
 - `npm run db:studio` - Open Drizzle Studio (database GUI)
 
+## Centralized Query Management
+
+This project uses a centralized query management system built with TanStack Query (React Query). All API calls are organized in dedicated folders rather than scattered throughout components.
+
+### Structure
+- **`lib/api/`** - API client, Zod schemas, and type definitions with runtime validation
+- **`lib/queries/`** - Read operations (GET requests) with TanStack Query hooks
+- **`lib/mutations/`** - Write operations (POST, PUT, DELETE) with TanStack Mutation hooks
+
+### Benefits
+- **Type Safety**: Zod schemas provide runtime validation and TypeScript types
+- **Code Organization**: All API logic centralized in dedicated folders
+- **Caching**: Automatic caching, background refetching, and stale-while-revalidate
+- **Optimistic Updates**: Better UX with immediate UI updates
+- **Error Handling**: Centralized error handling with retry logic
+- **Performance**: Query deduplication and intelligent cache management
+
+### Usage Examples
+
+```tsx
+// Using queries
+import { useQuestions, useQuestion } from "@/lib/queries";
+const { data, isLoading } = useQuestions(1);
+const { data: question } = useQuestion(id);
+
+// Using mutations
+import { useCreateQuestion, useVote } from "@/lib/mutations";
+const createQuestion = useCreateQuestion(); // Handles navigation and cache invalidation
+const vote = useVote(); // Handles optimistic updates and cache invalidation
+```
+
 ## Key Features Implementation Status
 
 - [x] User authentication (email/password + OAuth - GitHub & Google)
@@ -197,6 +240,7 @@ project/
 - [x] Dynamic header (shows logged-in user)
 - [x] **Full-text search** (PostgreSQL to_tsvector search)
 - [x] **Rate limiting** (Upstash Redis-based protection)
+- [x] **Centralized query management** (TanStack Query with Zod validation)
 - [ ] Accept answers
 - [ ] Daily digest emails
 - [ ] Comments on answers

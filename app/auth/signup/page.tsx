@@ -6,7 +6,6 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn, signUp } from "@/lib/auth-client";
-import type { SignUpFormData } from "@/lib/types";
 import { signUpSchema } from "@/lib/validations/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
@@ -14,6 +13,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+
+// Form type used only in this component
+interface SignUpFormData {
+  name: string;
+  email: string;
+  password: string;
+}
 
 export default function SignUpPage() {
   const router = useRouter();

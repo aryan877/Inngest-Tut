@@ -2,22 +2,13 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Question } from "@/lib/types";
-import { useQuery } from "@tanstack/react-query";
+import type { QuestionWithAuthor } from "@/lib/api";
+import { useQuestions } from "@/lib/queries";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
 
-async function fetchQuestions(page: number = 1) {
-  const res = await fetch(`/api/questions?page=${page}&limit=20`);
-  if (!res.ok) throw new Error("Failed to fetch questions");
-  return res.json();
-}
-
 export default function QuestionsPage() {
-  const { data, isLoading, error } = useQuery({
-    queryKey: ["questions", 1],
-    queryFn: () => fetchQuestions(1),
-  });
+  const { data, isLoading, error } = useQuestions(1);
 
   if (isLoading) {
     return <div>Loading questions...</div>;
@@ -27,7 +18,7 @@ export default function QuestionsPage() {
     return <div>Error loading questions</div>;
   }
 
-  const questions: Question[] = data?.data?.questions || [];
+  const questions: QuestionWithAuthor[] = data?.data?.questions || [];
 
   return (
     <div className="max-w-5xl mx-auto">
