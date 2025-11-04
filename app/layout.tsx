@@ -22,7 +22,7 @@ export default function RootLayout({
       >
         <Providers>
           <Header />
-          <main className="px-4 md:px-6 py-8">
+          <main className="px-4 sm:px-6 py-6 sm:py-8">
             <div className="max-w-[1200px] mx-auto">{children}</div>
           </main>
         </Providers>

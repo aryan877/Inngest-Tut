@@ -68,8 +68,8 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-16">
-      <div className="bg-card p-8 rounded shadow-sm">
+    <div className="max-w-md mx-auto mt-16 px-4 sm:px-0">
+      <div className="bg-card p-6 sm:p-8 rounded shadow-sm">
         <h1 className="font-outfit text-[22px] leading-[1.45] font-bold text-card-foreground mb-2 text-center">
           Sign In
         </h1>

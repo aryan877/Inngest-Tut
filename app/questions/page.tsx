@@ -34,17 +34,17 @@ export default function QuestionsPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div>
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-8">
+        <div className="space-y-1">
           <h1 className="font-heading text-3xl font-bold text-foreground">
             All Questions
           </h1>
-          <p className="text-sm text-muted-foreground mt-2">
+          <p className="text-sm text-muted-foreground">
             {data?.data?.pagination?.total || 0} questions
           </p>
         </div>
-        <Link href="/questions/ask">
-          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
+        <Link href="/questions/ask" className="w-full md:w-auto">
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold w-full">
             Ask Question
           </Button>
         </Link>
@@ -74,8 +74,8 @@ export default function QuestionsPage() {
               ))}
             </div>
 
-            <div className="flex items-center justify-between text-sm flex-wrap gap-4">
-              <div className="flex items-center gap-4 text-muted-foreground">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-sm">
+              <div className="flex flex-wrap items-center gap-4 text-muted-foreground">
                 <span className="font-medium">{question.votes} votes</span>
                 <span>{question.views} views</span>
                 {question.aiAnswerGenerated && (
@@ -87,7 +87,7 @@ export default function QuestionsPage() {
                   </Badge>
                 )}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-muted-foreground">
                   asked {formatDistanceToNow(new Date(question.createdAt))} ago
                 </span>

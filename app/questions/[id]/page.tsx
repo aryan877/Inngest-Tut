@@ -84,20 +84,22 @@ export default function QuestionDetailPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Question */}
-      <div className="bg-card border border-border rounded p-6 mb-6">
-        <div className="flex gap-4">
-          <VoteButtons
-            itemId={question.id}
-            itemType="question"
-            initialVotes={question.votes}
-          />
+      <div className="bg-card border border-border rounded p-4 sm:p-6 mb-6">
+        <div className="flex flex-col gap-6 md:flex-row md:gap-6">
+          <div className="flex justify-center md:block md:pt-1">
+            <VoteButtons
+              itemId={question.id}
+              itemType="question"
+              initialVotes={question.votes}
+            />
+          </div>
 
           <div className="flex-1">
             <h1 className="font-heading text-3xl font-bold mb-4 text-card-foreground">
               {question.title}
             </h1>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground mb-6">
+            <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-6">
               <span>
                 Asked {formatDistanceToNow(new Date(question.createdAt))} ago
               </span>
@@ -148,7 +150,7 @@ export default function QuestionDetailPage() {
             </div>
 
             <div className="mt-6 pt-6 border-t border-border">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-sm text-muted-foreground">Asked by</span>
                 <span className="font-medium text-foreground">
                   {question.author.name}
@@ -170,16 +172,18 @@ export default function QuestionDetailPage() {
           {question.answers?.map((answer) => (
             <div
               key={answer.id}
-              className="bg-card border border-border rounded p-6"
+              className="bg-card border border-border rounded p-4 sm:p-6"
             >
-              <div className="flex gap-4">
-                <VoteButtons
-                  itemId={answer.id}
-                  itemType="answer"
-                  initialVotes={answer.votes}
-                />
+              <div className="flex flex-col gap-6 md:flex-row md:gap-6">
+                <div className="flex justify-center md:block md:pt-1">
+                  <VoteButtons
+                    itemId={answer.id}
+                    itemType="answer"
+                    initialVotes={answer.votes}
+                  />
+                </div>
 
-                <div className="flex-1">
+                <div className="flex-1 overflow-x-auto">
                   {answer.isAiGenerated && (
                     <div className="mb-4">
                       <Badge
@@ -191,7 +195,7 @@ export default function QuestionDetailPage() {
                     </div>
                   )}
 
-                  <div className="prose prose-brand max-w-none mb-4">
+                  <div className="prose prose-brand max-w-none mb-4 sm:pr-6">
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}
                       rehypePlugins={[rehypeRaw]}
@@ -229,8 +233,8 @@ export default function QuestionDetailPage() {
                     </ReactMarkdown>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <div className="flex items-center gap-2">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between pt-4 border-t border-border">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="text-sm text-muted-foreground">
                         Answered{" "}
                         {formatDistanceToNow(new Date(answer.createdAt))} ago

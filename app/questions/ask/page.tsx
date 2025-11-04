@@ -54,7 +54,7 @@ export default function AskQuestionPage() {
       <h1 className="font-heading text-3xl font-bold mb-2 text-foreground">
         Ask a Public Question
       </h1>
-      <p className="text-sm text-muted-foreground mb-8">
+      <p className="text-sm text-muted-foreground mb-6 sm:mb-8">
         Get instant AI-powered answers and community insights
       </p>
 
@@ -110,7 +110,7 @@ export default function AskQuestionPage() {
           />
         </div>
 
-        <div className="bg-card p-4 border border-border rounded">
+        <div className="bg-card p-4 sm:p-6 border border-border rounded">
           <h3 className="font-semibold mb-2 text-card-foreground">
             What happens next?
           </h3>
@@ -122,17 +122,22 @@ export default function AskQuestionPage() {
           </ul>
         </div>
 
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
           <Button
             type="submit"
             disabled={isSubmitting || createQuestionMutation.isPending}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold w-full sm:w-auto"
           >
             {isSubmitting || createQuestionMutation.isPending
               ? "Submitting..."
               : "Submit Question"}
           </Button>
-          <Button type="button" variant="outline" onClick={() => router.back()}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.back()}
+            className="w-full sm:w-auto"
+          >
             Cancel
           </Button>
         </div>

@@ -83,8 +83,8 @@ export default function SignUpPage() {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-16">
-      <Card className="p-8">
+    <div className="max-w-md mx-auto mt-16 px-4 sm:px-0">
+      <Card className="p-6 sm:p-8">
         <h1 className="text-3xl font-bold mb-2 text-center">Create Account</h1>
         <p className="text-muted-foreground mb-6 text-center">
           Join the DevQuery community

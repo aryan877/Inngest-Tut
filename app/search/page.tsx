@@ -47,18 +47,18 @@ export default function SearchPage() {
       </h1>
 
       <form onSubmit={handleSearch} className="mb-8">
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Input
             type="text"
             placeholder="Search for questions..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="flex-1"
+            className="flex-1 w-full"
           />
           <Button
             type="submit"
             disabled={isLoading}
-            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold w-full sm:w-auto"
           >
             {isLoading ? (
               <Loader2 className="h-4 w-4 animate-spin" />

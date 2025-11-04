@@ -9,9 +9,13 @@ export default function ProfileSettingsPage() {
   const router = useRouter();
 
   return (
-    <div className="max-w-4xl mx-auto py-8">
-      <div className="mb-8">
-        <Button variant="ghost" onClick={() => router.back()} className="mb-4">
+    <div className="max-w-4xl mx-auto py-6 sm:py-8">
+      <div className="mb-6 sm:mb-8">
+        <Button
+          variant="ghost"
+          onClick={() => router.back()}
+          className="mb-4 w-full sm:w-auto justify-start sm:justify-center"
+        >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back
         </Button>
