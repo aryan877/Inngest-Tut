@@ -166,40 +166,73 @@ A production-ready Q&A platform (like Stack Overflow) with AI-powered instant an
 
 ### 🎬 Suggested Teaching Approach
 
-**Video Structure (90-120 minutes total):**
+**Video Structure (3-3.5 hours total):**
 
-1. **Introduction (10 min)** - Project overview, tech stack showcase
-2. **Database Setup (10 min)** - Neon Postgres, Drizzle schema walkthrough
-3. **Authentication (15 min)** - Better Auth setup, OAuth configuration
-4. **Core Features (30 min)**
-   - Questions CRUD with pagination
-   - Markdown editor
-   - Voting system
-   - User profiles
-5. **Advanced: AI Integration (20 min)**
-   - Inngest setup
-   - OpenAI API calls
-   - Vision API for images
-   - Auto-tagging
-6. **Advanced: Image Uploads (15 min)**
-   - S3 bucket setup
-   - Presigned URLs
-   - Security considerations
-7. **TanStack Query Pattern (15 min)**
-   - Centralized queries
-   - Mutations with optimistic updates
-   - Cache invalidation
-8. **Production Polish (10 min)**
-   - Rate limiting
-   - Error handling
-   - Deployment
+1. **Introduction & Setup (20 min)**
+   - Project overview and tech stack
+   - Environment setup and dependencies
+   - Project structure walkthrough
+
+2. **Database & Schema (25 min)**
+   - Neon Postgres setup
+   - Drizzle ORM introduction
+   - Complete schema walkthrough (users, questions, answers, votes, tags)
+   - Database relationships
+
+3. **Authentication System (30 min)**
+   - Better Auth configuration
+   - Email/password authentication
+   - OAuth setup (GitHub & Google)
+   - Session management
+
+4. **Questions Feature (35 min)**
+   - Question list with pagination
+   - Question detail page
+   - Creating questions with markdown editor
+   - Form validation with Zod
+
+5. **Answers & Voting (25 min)**
+   - Answer submission
+   - Voting system (upvote/downvote)
+   - Accept answer feature
+   - Reputation system
+
+6. **User Profiles & Search (20 min)**
+   - User profile pages
+   - Profile editing
+   - Full-text search implementation
+
+7. **AI Integration with Inngest (30 min)**
+   - Inngest setup and event-driven architecture
+   - GPT-5 answer generation
+   - Vision API for image analysis
+   - Auto-tagging with GPT-5 Mini
+   - Email notifications
+
+8. **Image Uploads with S3 (20 min)**
+   - AWS S3 bucket setup
+   - Presigned URLs concept
+   - Direct browser-to-S3 uploads
+   - Image display
+
+9. **TanStack Query Pattern (25 min)**
+   - Centralized query management
+   - Query hooks and caching
+   - Mutation hooks
+   - Optimistic updates
+   - Cache invalidation strategies
+
+10. **Production Features (15 min)**
+    - Rate limiting with Upstash Redis
+    - Error handling
+    - Deployment to Vercel
 
 **Teaching Tips:**
 - Start with the **database schema** (`lib/db/schema.ts`) - it's the foundation
 - Show the **request flow**: Component → API Route → Database → Inngest
 - Emphasize **type safety**: TypeScript → Drizzle → Zod validation
-- Demonstrate **TanStack Query** benefits: caching, optimistic updates
-- Highlight **modern patterns**: Server Components, Server Actions, centralized queries
+- Live code the TanStack Query patterns to show caching in action
+- Highlight **modern patterns**: Server Components, centralized queries, event-driven jobs
 
 ---
 
@@ -766,251 +799,58 @@ npm run db:studio  # Opens Drizzle Studio in browser
 
 ### How TanStack Query Works
 
-**Query Keys (Hierarchical):**
-```typescript
-// lib/api/index.ts
-export const questionKeys = {
-  all: ["questions"] as const,
-  lists: () => [...questionKeys.all, "list"] as const,
-  list: (page: number) => [...questionKeys.lists(), page] as const,
-  details: () => [...questionKeys.all, "detail"] as const,
-  detail: (id: string) => [...questionKeys.details(), id] as const,
-};
-```
+**Key Concepts:**
+- **Hierarchical Query Keys** - Organized cache keys for precise invalidation (`lib/api/index.ts`)
+- **Automatic Caching** - Data cached with configurable staleness (30s default)
+- **Optimistic Updates** - UI updates immediately, rolls back on error
+- **Cache Invalidation** - Smart refetching when data changes
 
-**Benefits:**
-- Precise cache invalidation
-- Easy to clear all questions: `invalidateQueries({ queryKey: questionKeys.all })`
-- Clear specific question: `invalidateQueries({ queryKey: questionKeys.detail(id) })`
-
-**Example Query:**
-```typescript
-// lib/queries/questions.ts
-export const useQuestion = (id: string) => {
-  return useQuery({
-    queryKey: questionKeys.detail(id),
-    queryFn: () => api.questions.getById(id),
-    staleTime: 30_000, // Consider fresh for 30 seconds
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
-  });
-};
-```
-
-**Example Mutation with Optimistic Update:**
-```typescript
-// lib/mutations/votes.ts
-export const useVote = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: api.votes.vote,
-    onMutate: async (variables) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: questionKeys.detail(variables.itemId),
-      });
-
-      // Snapshot the previous value
-      const previousData = queryClient.getQueryData(
-        questionKeys.detail(variables.itemId)
-      );
-
-      // Optimistically update to the new value
-      queryClient.setQueryData(
-        questionKeys.detail(variables.itemId),
-        (old: any) => ({
-          ...old,
-          votes: old.votes + (variables.voteType === "up" ? 1 : -1),
-        })
-      );
-
-      return { previousData };
-    },
-    onError: (_err, variables, context) => {
-      // Rollback to previous value on error
-      queryClient.setQueryData(
-        questionKeys.detail(variables.itemId),
-        context?.previousData
-      );
-    },
-    onSettled: () => {
-      // Refetch to ensure sync with server
-      queryClient.invalidateQueries({ queryKey: questionKeys.all });
-    },
-  });
-};
-```
+See "Key Code Patterns" section above for detailed examples.
 
 ---
 
 ### How Inngest Works
 
-**Event Flow:**
-1. API route sends event: `inngest.send({ name: "question.created", data: { questionId } })`
-2. Inngest receives event, queues function execution
-3. Function runs with retry logic and concurrency limits
-4. Steps are tracked, can be resumed on failure
+**Event-Driven Background Jobs:**
+1. API route sends event → `inngest.send({ name: "question.created", data: { questionId } })`
+2. Inngest receives event, queues function with retry logic and concurrency limits
+3. Function executes in steps (each step tracked, resumable on failure)
+4. Generate AI answer → Tag question → Send notifications
 
-**Function Structure:**
-```typescript
-// inngest/functions/generate-ai-answer.ts
-export const generateAIAnswer = inngest.createFunction(
-  {
-    id: "generate-ai-answer",
-    name: "Generate AI Answer for Question",
-    concurrency: { limit: 5 }, // Max 5 concurrent executions
-    retries: 3, // Retry 3 times on failure
-  },
-  { event: "question.created" }, // Trigger on this event
-  async ({ event, step }) => {
-    // Each step is tracked and can be retried independently
+**Key Features:**
+- **Step-based execution** - Each step cached and retryable independently
+- **Concurrency control** - Limit concurrent executions (e.g., max 5 AI requests)
+- **Auto-retry** - Failed functions retry automatically (3x default)
+- **Monitoring** - View logs and replay events in dashboard
 
-    const question = await step.run("fetch-question", async () => {
-      // This step runs once, result is cached
-      return await fetchQuestion(event.data.questionId);
-    });
-
-    const imageUrls = await step.run("get-image-urls", async () => {
-      if (!question.images?.length) return [];
-      // Get presigned URLs for images
-      return await getImageUrls(question.images);
-    });
-
-    const answer = await step.run("generate-answer", async () => {
-      // Call OpenAI with vision if images present
-      const messages = [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: question.content },
-            ...imageUrls.map((url) => ({
-              type: "image_url",
-              image_url: { url },
-            })),
-          ],
-        },
-      ];
-
-      const completion = await openai.chat.completions.create({
-        model: "gpt-5",
-        messages,
-      });
-
-      return completion.choices[0].message.content;
-    });
-
-    const tags = await step.run("generate-tags", async () => {
-      // Use cheaper GPT-5 Mini for tagging
-      const completion = await openai.chat.completions.create({
-        model: "gpt-5-mini",
-        messages: [
-          {
-            role: "system",
-            content: "Generate 3-5 relevant tags for this question.",
-          },
-          { role: "user", content: question.title },
-        ],
-      });
-
-      return completion.choices[0].message.content.split(",");
-    });
-
-    await step.run("save-answer-and-tags", async () => {
-      // Save answer to database
-      await saveAnswer({
-        questionId: question.id,
-        content: answer,
-        userId: "ai-bot",
-      });
-
-      // Save tags
-      await saveTags(question.id, tags);
-    });
-  }
-);
+**Local Development:**
+```bash
+npx inngest-cli@latest dev  # Opens UI at http://localhost:8288
 ```
 
-**Viewing Function Execution:**
-- Local: `npx inngest-cli@latest dev` → http://localhost:8288
-- Production: Inngest dashboard → view logs, replay events, monitor
+See "Key Code Patterns" section above for detailed function structure.
 
 ---
 
 ### How Image Upload Works (S3 Presigned URLs)
 
-**Flow:**
-1. **Client requests presigned URL**: `POST /api/upload/presigned-url`
-2. **Server generates URL**: S3 SDK creates temporary upload URL (expires in 5 minutes)
-3. **Client uploads directly to S3**: Browser sends file to S3, not our server
-4. **Client sends image key**: After upload, client sends S3 key to API
-5. **Server saves key in database**: Stored in `images` array column
+**Secure Direct Upload Flow:**
+1. Client requests presigned URL from server (`POST /api/upload/presigned-url`)
+2. Server generates temporary S3 upload URL (expires in 5 minutes)
+3. Browser uploads file directly to S3 (never touches our server)
+4. Client sends S3 key to API, stored in database `images` array
 
-**Security Benefits:**
-- Files never touch our server (saves bandwidth, faster uploads)
-- Presigned URLs expire quickly (5 minutes)
-- S3 bucket is private, only presigned URLs grant access
-- Server validates file type and size before generating URL
-
-**Code Example:**
-```typescript
-// components/image-upload.tsx
-const uploadImages = useUploadImages();
-
-const handleUpload = async (files: File[]) => {
-  const uploadPromises = files.map(async (file) => {
-    // Step 1: Get presigned URL
-    const { url, key } = await getPresignedUrl(file.name, file.type);
-
-    // Step 2: Upload directly to S3
-    await fetch(url, {
-      method: "PUT",
-      body: file,
-      headers: { "Content-Type": file.type },
-    });
-
-    return key; // Return S3 key
-  });
-
-  const imageKeys = await Promise.all(uploadPromises);
-
-  // Step 3: Store keys in form state
-  setImages(imageKeys);
-};
-```
+**Benefits:** Faster uploads, saves bandwidth, secure (URLs expire quickly, server validates file type/size)
 
 ---
 
 ### How Rate Limiting Works
 
-**Implementation:**
-- Upstash Redis with sliding window algorithm
+**Upstash Redis Sliding Window:**
 - 10 requests per 10 seconds per IP address
-- Implemented in Next.js 16 proxy layer
-
-**Code:**
-```typescript
-// lib/rate-limit.ts
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-
-export const ratelimit = new Ratelimit({
-  redis: Redis.fromEnv(),
-  limiter: Ratelimit.slidingWindow(10, "10 s"),
-  analytics: true,
-});
-
-// proxy.ts (Next.js 16 proxy)
-export default async function middleware(request: NextRequest) {
-  const ip = request.ip ?? "127.0.0.1";
-  const { success } = await ratelimit.limit(ip);
-
-  if (!success) {
-    return new Response("Too Many Requests", { status: 429 });
-  }
-
-  return NextResponse.next();
-}
-```
+- Implemented in Next.js proxy layer (`proxy.ts`)
+- Returns 429 status when limit exceeded
+- Analytics enabled for monitoring
 
 ---
 
@@ -1090,20 +930,6 @@ export function FollowButton({ userId }) {
 ---
 
 ## ⚠️ Troubleshooting & Common Pitfalls
-
-### Next.js 16 Compatibility Issues
-
-**Problem:** Package compatibility errors with Next.js 16 RC
-```
-Error: Module not found or type errors
-```
-
-**Solution:**
-- Next.js 16 is in RC (Release Candidate), some packages may not be fully compatible
-- Check `package.json` for `"overrides"` section that forces compatible versions
-- If issues persist, consider downgrading to Next.js 15 (stable) until 16 is released
-
----
 
 ### Inngest Local Development
 
@@ -1389,40 +1215,13 @@ onSuccess: () => {
 
 ## 💡 Student Exercise Ideas
 
-### Beginner Level
-1. Add user bio character counter (max 500 chars)
-2. Add "Sort by" dropdown (newest, most votes, most answers)
-3. Add loading skeletons instead of "Loading..."
-4. Add toast notifications for success/error
-
-### Intermediate Level
-1. Implement comments on answers
-2. Add question editing (only by author, within 5 minutes)
-3. Add user following system
-4. Create tag pages with filtered questions
-5. Add "My Questions" and "My Answers" tabs on profile
-
-### Advanced Level
-1. Implement daily digest emails (cron job with Inngest)
-2. Add full-text search with filters (tags, date range)
-3. Create admin dashboard (user management, content moderation)
-4. Add reputation leaderboard with weekly rankings
-5. Implement badge/achievement system
-6. Add code playground integration (embedded CodeSandbox)
+**Beginner:** Bio character counter, sort dropdown, loading skeletons, toast notifications
+**Intermediate:** Comments on answers, question editing, user following, tag pages, profile tabs
+**Advanced:** Daily digest emails (Inngest cron), search filters, admin dashboard, leaderboard, badges, code playground
 
 ---
 
-## 📄 License
-
-MIT License - Feel free to use this project for learning and teaching purposes.
-
----
-
-## 🙏 Credits
-
-Built for educational purposes.
-
-Technologies used: Next.js 16, React 19, Tailwind v4, TanStack Query, Drizzle ORM, Better Auth, Inngest, OpenAI GPT-5, AWS S3, Neon Postgres, and more.
+**Technologies:** Next.js 16, React 19, Tailwind v4, TanStack Query, Drizzle ORM, Better Auth, Inngest, OpenAI GPT-5, AWS S3, Neon Postgres.
 
 ---
 

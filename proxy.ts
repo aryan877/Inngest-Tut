@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { ratelimit } from "./lib/rate-limit";
+import { ratelimit } from "./lib/services/rate-limit";
 
 export async function proxy(request: NextRequest) {
   // Skip rate limiting for static files and internal Next.js routes
