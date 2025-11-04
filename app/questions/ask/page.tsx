@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { MarkdownEditor } from "@/components/ui/markdown-editor";
-import { askQuestionSchema } from "@/lib/validations/question";
 import { useCreateQuestion } from "@/lib/mutations";
+import { askQuestionSchema } from "@/lib/validations/question";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -128,7 +128,9 @@ export default function AskQuestionPage() {
             disabled={isSubmitting || createQuestionMutation.isPending}
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
           >
-            {isSubmitting || createQuestionMutation.isPending ? "Submitting..." : "Submit Question"}
+            {isSubmitting || createQuestionMutation.isPending
+              ? "Submitting..."
+              : "Submit Question"}
           </Button>
           <Button type="button" variant="outline" onClick={() => router.back()}>
             Cancel

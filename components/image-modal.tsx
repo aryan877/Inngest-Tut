@@ -11,7 +11,12 @@ interface ImageModalProps {
   alt: string;
 }
 
-export function ImageModal({ isOpen, onClose, imageUrl, alt }: ImageModalProps) {
+export function ImageModal({
+  isOpen,
+  onClose,
+  imageUrl,
+  alt,
+}: ImageModalProps) {
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {

@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest";
-import { answers } from "@/lib/schema";
+import { answers, userProfile } from "@/lib/schema";
+import { eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 // POST /api/answers - Create a new answer
@@ -25,6 +26,14 @@ export async function POST(request: NextRequest) {
         isAiGenerated: false,
       })
       .returning();
+
+    // Update user's answer count in profile
+    await db
+      .update(userProfile)
+      .set({
+        answersCount: sql`${userProfile.answersCount} + 1`,
+      })
+      .where(eq(userProfile.userId, userId));
 
     // Get question details for notification
     const question = await db.query.questions.findFirst({

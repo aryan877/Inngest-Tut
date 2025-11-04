@@ -1,5 +1,10 @@
+import {
+  apiRequest,
+  queryKeys,
+  type AnswerWithAuthor,
+  type QuestionWithAuthor,
+} from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
-import { queryKeys, apiRequest, type QuestionWithAuthor, type AnswerWithAuthor } from "@/lib/api";
 
 // API response types
 export interface QuestionsResponse {
@@ -21,7 +26,10 @@ export interface QuestionResponse {
 }
 
 // Query functions
-const getQuestions = async (page: number = 1, limit: number = 20): Promise<QuestionsResponse> =>
+const getQuestions = async (
+  page: number = 1,
+  limit: number = 20
+): Promise<QuestionsResponse> =>
   apiRequest(`/api/questions?page=${page}&limit=${limit}`);
 
 const getQuestion = async (id: string): Promise<QuestionResponse> =>

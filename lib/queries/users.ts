@@ -1,9 +1,9 @@
+import { apiRequest, queryKeys, type UserProfileApiResponse } from "@/lib/api";
 import { useQuery } from "@tanstack/react-query";
-import { queryKeys, apiRequest, type UserWithProfile } from "@/lib/api";
 
 // API response types
 export interface UserResponse {
-  data: UserWithProfile;
+  data: UserProfileApiResponse;
 }
 
 // Query functions

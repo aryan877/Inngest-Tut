@@ -3,8 +3,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useSearch } from "@/lib/queries";
 import { type QuestionWithAuthor } from "@/lib/api";
+import { useSearch } from "@/lib/queries";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2, Search } from "lucide-react";
 import Link from "next/link";
@@ -78,7 +78,8 @@ export default function SearchPage() {
 
       {searchQuery && !isLoading && searchResults && (
         <p className="text-sm text-muted-foreground mb-4">
-          Found {searchResults.data.questions.length} result{searchResults.data.questions.length !== 1 ? "s" : ""}
+          Found {searchResults.data.questions.length} result
+          {searchResults.data.questions.length !== 1 ? "s" : ""}
         </p>
       )}
 
@@ -114,16 +115,19 @@ export default function SearchPage() {
           </Link>
         ))}
 
-        {searchQuery && !isLoading && searchResults && searchResults.data.questions.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              No results found for "{searchQuery}"
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              Try different keywords or ask a new question
-            </p>
-          </div>
-        )}
+        {searchQuery &&
+          !isLoading &&
+          searchResults &&
+          searchResults.data.questions.length === 0 && (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                No results found for "{searchQuery}"
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Try different keywords or ask a new question
+              </p>
+            </div>
+          )}
       </div>
     </div>
   );

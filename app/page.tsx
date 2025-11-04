@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { Bot, Tags, Users } from "lucide-react";
+import Link from "next/link";
 
 export default function HomePage() {
   return (

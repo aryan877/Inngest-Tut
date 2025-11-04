@@ -4,10 +4,14 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useUser } from "@/lib/queries";
 import { formatDistanceToNow } from "date-fns";
 import { useParams } from "next/navigation";
+import { useSession } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function UserProfilePage() {
   const params = useParams();
   const userId = params.id as string;
+  const { data: session } = useSession();
 
   const { data, isLoading, error } = useUser(userId);
 
@@ -19,24 +23,24 @@ export default function UserProfilePage() {
     return <div className="max-w-5xl mx-auto">Error loading profile</div>;
   }
 
-  const userData = data.data;
-  const profile = userData.profile;
+  const { user, profile, questions, answers } = data.data;
 
   return (
     <div className="max-w-5xl mx-auto">
       {/* User Header */}
       <div className="bg-card p-8 mb-8 rounded shadow-sm">
-        <div className="flex items-start gap-6">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-6">
           <Avatar className="h-24 w-24">
-            <AvatarImage src={userData.image || undefined} alt={userData.name} />
+            <AvatarImage src={user.image || undefined} alt={user.name || 'User avatar'} />
             <AvatarFallback className="text-2xl bg-muted text-foreground">
-              {userData.name.charAt(0).toUpperCase()}
+              {user.name?.charAt(0)?.toUpperCase() || 'U'}
             </AvatarFallback>
           </Avatar>
 
           <div className="flex-1">
             <h1 className="font-outfit text-3xl font-bold mb-2 text-card-foreground">
-              {userData.name}
+              {user.name || 'Unknown User'}
             </h1>
             {profile?.bio && (
               <p className="text-sm text-muted-foreground mb-4">
@@ -65,7 +69,7 @@ export default function UserProfilePage() {
               </div>
               <div>
                 <div className="text-sm font-medium text-card-foreground">
-                  {formatDistanceToNow(new Date(userData.createdAt))} ago
+                  {user.createdAt ? formatDistanceToNow(new Date(user.createdAt)) + ' ago' : 'Unknown'}
                 </div>
                 <div className="text-sm text-muted-foreground">Member for</div>
               </div>
@@ -98,9 +102,17 @@ export default function UserProfilePage() {
                     🐙 {profile.githubHandle}
                   </a>
                 )}
-              </div>
+                </div>
             )}
           </div>
+          </div>
+          {session?.user?.id === userId && (
+            <div className="flex gap-2">
+              <Button variant="outline" asChild>
+                <Link href="/settings/profile">Edit Profile</Link>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -126,6 +138,57 @@ export default function UserProfilePage() {
           <p className="text-sm text-muted-foreground">Total answers provided</p>
         </div>
       </div>
+
+      {/* User's Recent Questions */}
+      {questions && questions.length > 0 && (
+        <div className="bg-card p-6 border border-border rounded mb-6">
+          <h2 className="font-heading text-xl font-bold mb-4 text-card-foreground">
+            Recent Questions
+          </h2>
+          <div className="space-y-4">
+            {questions.map((question) => (
+              <div key={question.id} className="pb-4 border-b border-border last:border-b-0">
+                <h3 className="font-medium text-card-foreground mb-2 hover:text-primary cursor-pointer">
+                  {question.title}
+                </h3>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>{question.votes || 0} votes</span>
+                  <span>{question.views || 0} views</span>
+                  <span>{formatDistanceToNow(new Date(question.createdAt))} ago</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* User's Recent Answers */}
+      {answers && answers.length > 0 && (
+        <div className="bg-card p-6 border border-border rounded">
+          <h2 className="font-heading text-xl font-bold mb-4 text-card-foreground">
+            Recent Answers
+          </h2>
+          <div className="space-y-4">
+            {answers.map((answer) => (
+              <div key={answer.id} className="pb-4 border-b border-border last:border-b-0">
+                <div className="text-sm text-muted-foreground mb-2">
+                  Answered on: <span className="font-medium text-card-foreground">{answer.question?.title}</span>
+                </div>
+                <div className="text-card-foreground mb-2 line-clamp-3">
+                  {answer.content}
+                </div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>{answer.votes || 0} votes</span>
+                  <span>{formatDistanceToNow(new Date(answer.createdAt))} ago</span>
+                  {answer.isAccepted && (
+                    <span className="text-green-600 font-medium">✓ Accepted</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

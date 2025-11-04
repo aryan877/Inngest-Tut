@@ -1,15 +1,14 @@
 "use client";
 
+import { ImageDisplay } from "@/components/image-display";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ImageDisplay } from "@/components/image-display";
 import { Label } from "@/components/ui/label";
 import { MarkdownEditor } from "@/components/ui/markdown-editor";
 import { VoteButtons } from "@/components/vote-buttons";
-import type { QuestionWithAuthor, AnswerWithAuthor } from "@/lib/api";
-import { submitAnswerSchema } from "@/lib/validations/question";
-import { useQuestion } from "@/lib/queries";
 import { useCreateAnswer } from "@/lib/mutations";
+import { useQuestion } from "@/lib/queries";
+import { submitAnswerSchema } from "@/lib/validations/question";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { formatDistanceToNow } from "date-fns";
 import { useParams } from "next/navigation";
@@ -285,7 +284,9 @@ export default function QuestionDetailPage() {
             disabled={isSubmitting || createAnswerMutation.isPending}
             className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
           >
-            {isSubmitting || createAnswerMutation.isPending ? "Submitting..." : "Submit Answer"}
+            {isSubmitting || createAnswerMutation.isPending
+              ? "Submitting..."
+              : "Submit Answer"}
           </Button>
         </form>
       </div>

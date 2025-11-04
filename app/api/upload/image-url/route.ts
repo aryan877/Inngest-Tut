@@ -10,10 +10,7 @@ export async function POST(request: NextRequest) {
     const { key } = body;
 
     if (!key) {
-      return NextResponse.json(
-        { error: "Missing key" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing key" }, { status: 400 });
     }
 
     // Create presigned GET URL

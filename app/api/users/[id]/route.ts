@@ -27,7 +27,7 @@ export async function GET(
       );
     }
 
-    // Get user's questions
+    // Get user's recent questions (for display)
     const userQuestions = await db.query.questions.findMany({
       where: and(
         eq(questions.authorId, userId),
@@ -37,7 +37,7 @@ export async function GET(
       limit: 10,
     });
 
-    // Get user's answers
+    // Get user's recent answers (for display)
     const userAnswers = await db.query.answers.findMany({
       where: and(eq(answers.authorId, userId), eq(answers.isDeleted, false)),
       orderBy: [desc(answers.createdAt)],
@@ -52,6 +52,13 @@ export async function GET(
       },
     });
 
+    // Use profile counts directly (they're updated on each action)
+    const profileData = userData.profile || {
+      questionsCount: 0,
+      answersCount: 0,
+      reputation: 0,
+    };
+
     return NextResponse.json({
       success: true,
       data: {
@@ -62,7 +69,7 @@ export async function GET(
           image: userData.image,
           createdAt: userData.createdAt,
         },
-        profile: userData.profile,
+        profile: profileData,
         questions: userQuestions,
         answers: userAnswers,
       },

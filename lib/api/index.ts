@@ -80,7 +80,7 @@ export type Answer = typeof answers.$inferSelect;
 export type UserProfile = typeof userProfile.$inferSelect;
 export type Tag = typeof tags.$inferSelect;
 
-// API response types with populated relationships (as expected by components)
+// API response types with populated relationships
 export type QuestionWithAuthor = Omit<Question, "authorId"> & {
   author: User; // Populated from authorId relationship
   tags: string[]; // Populated from questionTags junction table
@@ -90,6 +90,13 @@ export type AnswerWithAuthor = Omit<Answer, "authorId"> & {
   author: User | null; // Populated from authorId relationship (nullable)
 };
 
+export type AnswerWithQuestion = Omit<Answer, "questionId"> & {
+  question?: {
+    id: number;
+    title: string;
+  } | null; // Populated from questionId relationship
+};
+
 // Use Drizzle relations for type-safe user with profile
 export type UserWithProfile = User & {
   profile?: UserProfile | null;
@@ -97,4 +104,18 @@ export type UserWithProfile = User & {
     questions: number;
     answers: number;
   };
+};
+
+// API response type for user profile endpoint
+export type UserProfileApiResponse = {
+  user: {
+    id: string;
+    name: string;
+    email: string;
+    image: string | null;
+    createdAt: Date;
+  };
+  profile: UserProfile | null;
+  questions: Question[];
+  answers: AnswerWithQuestion[];
 };

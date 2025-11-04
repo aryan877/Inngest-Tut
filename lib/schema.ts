@@ -92,12 +92,9 @@ export const userProfile = pgTable("user_profile", {
   location: text("location"),
   website: text("website"),
   githubHandle: text("github_handle"),
-  twitterHandle: text("twitter_handle"),
   reputation: integer("reputation").default(0).notNull(),
   questionsCount: integer("questions_count").default(0).notNull(),
   answersCount: integer("answers_count").default(0).notNull(),
-  emailNotifications: boolean("email_notifications").default(true).notNull(),
-  emailDigest: boolean("email_digest").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at")
     .defaultNow()

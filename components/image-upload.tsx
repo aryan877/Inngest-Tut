@@ -5,7 +5,7 @@ import { useUploadImage } from "@/lib/mutations";
 import { useImageUrls } from "@/lib/queries";
 import { Loader2, Upload, X } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 
 // Component props type used only in this component
 interface ImageUploadProps {
@@ -30,7 +30,7 @@ export function ImageUpload({
 
   // Convert the array of query results to a key-value map
   const imageUrls = useMemo(() => {
-    const urls: {[key: string]: string} = {};
+    const urls: { [key: string]: string } = {};
     imageQueries.forEach((query, index) => {
       if (query.data && images[index]) {
         urls[images[index]] = query.data.url;
@@ -49,7 +49,9 @@ export function ImageUpload({
 
     setUploading(true);
     try {
-      const uploadPromises = files.map((file) => uploadImageMutation.mutateAsync(file));
+      const uploadPromises = files.map((file) =>
+        uploadImageMutation.mutateAsync(file)
+      );
       const uploadedUrls = await Promise.all(uploadPromises);
 
       const newImages = [...images, ...uploadedUrls];
@@ -82,13 +84,21 @@ export function ImageUpload({
           accept="image/*"
           multiple
           className="hidden"
-          disabled={uploading || uploadImageMutation.isPending || images.length >= maxImages}
+          disabled={
+            uploading ||
+            uploadImageMutation.isPending ||
+            images.length >= maxImages
+          }
         />
         <Button
           type="button"
           variant="outline"
           onClick={() => fileInputRef.current?.click()}
-          disabled={uploading || uploadImageMutation.isPending || images.length >= maxImages}
+          disabled={
+            uploading ||
+            uploadImageMutation.isPending ||
+            images.length >= maxImages
+          }
         >
           {uploading ? (
             <>

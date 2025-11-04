@@ -15,6 +15,13 @@
       "when": 1762219997145,
       "tag": "0001_curly_blazing_skull",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1762269578910,
+      "tag": "0002_dapper_frank_castle",
+      "breakpoints": true
     }
   ]
 }

@@ -1,7 +1,7 @@
 import { requireAuth } from "@/lib/auth-middleware";
 import { db } from "@/lib/db";
 import { inngest } from "@/lib/inngest";
-import { questions } from "@/lib/schema";
+import { questions, userProfile } from "@/lib/schema";
 import { askQuestionSchema } from "@/lib/validations/question";
 import { desc, eq, sql } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
@@ -111,6 +111,14 @@ export async function POST(request: NextRequest) {
         authorId: userId,
       })
       .returning();
+
+    // Update user's question count in profile
+    await db
+      .update(userProfile)
+      .set({
+        questionsCount: sql`${userProfile.questionsCount} + 1`
+      })
+      .where(eq(userProfile.userId, userId));
 
     // Emit event for AI answer generation
     await inngest.send({
