@@ -2,62 +2,458 @@
 
 A modern, Stack Overflow-style Q&A platform where every question receives instant AI-generated answers through background processing, while maintaining the ability for human responses.
 
-## Features
+---
+
+## 📚 Quick Start for Instructors
+
+> **For Educators**: This section helps you quickly understand the project architecture and teaching flow.
+
+### 🎯 Project Overview (60 Seconds)
+
+**What is it?**
+A production-ready Q&A platform (like Stack Overflow) with AI-powered instant answers using GPT-5, image analysis via Vision API, auto-tagging, voting/reputation system, and full authentication.
+
+**What makes it unique?**
+- **Next.js 16** (latest RC with App Router) + **React 19** (cutting edge)
+- **Tailwind CSS v4** (brand new architecture)
+- **TanStack Query** centralized pattern (enterprise-level)
+- **Inngest** event-driven background jobs (modern async pattern)
+- **Better Auth** (OAuth + email/password, simpler than NextAuth)
+- **Type-safe throughout** (Drizzle ORM + Zod validation + TypeScript)
+
+**Core Learning Outcomes for Students:**
+1. Modern Next.js 16 patterns (App Router, Server Components, Server Actions)
+2. Type-safe database with Drizzle ORM
+3. Advanced state management with TanStack Query (caching, optimistic updates)
+4. Event-driven architecture with Inngest (background jobs)
+5. AWS S3 presigned URLs (secure image uploads)
+6. OpenAI API integration (GPT-5 + Vision)
+7. Authentication with Better Auth (simpler modern alternative)
+8. Production patterns (rate limiting, validation, error handling)
+
+---
+
+### 🏗️ Architecture Diagrams
+
+#### 1. Request Flow (User Interactions)
+```
+┌─────────────┐
+│   Browser   │
+└──────┬──────┘
+       │
+       │ User creates question
+       ↓
+┌─────────────────────────────────────────────────┐
+│           Next.js 16 (App Router)               │
+│  ┌──────────────────────────────────────────┐  │
+│  │  1. Server Component renders form        │  │
+│  │  2. Client Component handles upload      │  │
+│  │  3. TanStack Mutation submits data       │  │
+│  └──────────────────────────────────────────┘  │
+└──────────────────┬──────────────────────────────┘
+                   │
+                   │ POST /api/questions
+                   ↓
+┌─────────────────────────────────────────────────┐
+│              API Route Handler                  │
+│  ┌──────────────────────────────────────────┐  │
+│  │  1. Validate with Zod schema             │  │
+│  │  2. Check rate limit (Upstash Redis)     │  │
+│  │  3. Insert to database (Drizzle ORM)     │  │
+│  │  4. Send event to Inngest                │  │
+│  └──────────────────────────────────────────┘  │
+└──────────────────┬──────────────────────────────┘
+                   │
+                   ↓
+        ┌──────────────────┐
+        │  Neon Postgres   │
+        │   (Serverless)   │
+        └──────────────────┘
+```
+
+#### 2. Background Job Flow (AI Answer Generation)
+```
+┌──────────────────┐
+│  Question Created│
+└────────┬─────────┘
+         │
+         │ Emit event: "question.created"
+         ↓
+┌─────────────────────────────────────────────────┐
+│               Inngest Cloud                     │
+│  ┌──────────────────────────────────────────┐  │
+│  │  Receives event, triggers function       │  │
+│  │  Retry logic, concurrency control        │  │
+│  └──────────────────────────────────────────┘  │
+└──────────────────┬──────────────────────────────┘
+                   │
+                   │ Step 1: Fetch question data
+                   ↓
+        ┌──────────────────────┐
+        │  GET /api/questions  │
+        │  (with images array) │
+        └──────────┬───────────┘
+                   │
+                   │ Step 2: Get image URLs if present
+                   ↓
+        ┌──────────────────────┐
+        │  POST /api/upload/   │
+        │    image-url         │
+        └──────────┬───────────┘
+                   │
+                   │ Step 3: Call OpenAI
+                   ↓
+        ┌──────────────────────┐
+        │   OpenAI GPT-5       │
+        │  (+ Vision API for   │
+        │   image analysis)    │
+        └──────────┬───────────┘
+                   │
+                   │ Step 4: Generate tags with GPT-5 Mini
+                   ↓
+        ┌──────────────────────┐
+        │   OpenAI GPT-5 Mini  │
+        │   (cost-optimized)   │
+        └──────────┬───────────┘
+                   │
+                   │ Step 5: Save answer + tags to DB
+                   ↓
+        ┌──────────────────────┐
+        │    Neon Postgres     │
+        │   (answers + tags)   │
+        └──────────────────────┘
+```
+
+#### 3. Authentication Flow (Better Auth)
+```
+┌─────────────┐
+│  User Login │
+└──────┬──────┘
+       │
+       ├─────── Email/Password ──────┐
+       │                             │
+       └─────── OAuth (GitHub/Google)┘
+                       │
+                       ↓
+            ┌──────────────────────┐
+            │   Better Auth API    │
+            │   /api/auth/*        │
+            └──────────┬───────────┘
+                       │
+                       │ Verify credentials
+                       ↓
+            ┌──────────────────────┐
+            │   Database Check     │
+            │   (users table)      │
+            └──────────┬───────────┘
+                       │
+                       │ Create session token
+                       ↓
+            ┌──────────────────────┐
+            │   HTTP-only Cookie   │
+            │   (secure session)   │
+            └──────────┬───────────┘
+                       │
+                       │ Send event: "user.created"
+                       ↓
+            ┌──────────────────────┐
+            │  Inngest Function    │
+            │  (welcome email)     │
+            └──────────────────────┘
+```
+
+---
+
+### 🎬 Suggested Teaching Approach
+
+**Video Structure (90-120 minutes total):**
+
+1. **Introduction (10 min)** - Project overview, tech stack showcase
+2. **Database Setup (10 min)** - Neon Postgres, Drizzle schema walkthrough
+3. **Authentication (15 min)** - Better Auth setup, OAuth configuration
+4. **Core Features (30 min)**
+   - Questions CRUD with pagination
+   - Markdown editor
+   - Voting system
+   - User profiles
+5. **Advanced: AI Integration (20 min)**
+   - Inngest setup
+   - OpenAI API calls
+   - Vision API for images
+   - Auto-tagging
+6. **Advanced: Image Uploads (15 min)**
+   - S3 bucket setup
+   - Presigned URLs
+   - Security considerations
+7. **TanStack Query Pattern (15 min)**
+   - Centralized queries
+   - Mutations with optimistic updates
+   - Cache invalidation
+8. **Production Polish (10 min)**
+   - Rate limiting
+   - Error handling
+   - Deployment
+
+**Teaching Tips:**
+- Start with the **database schema** (`lib/schema.ts`) - it's the foundation
+- Show the **request flow**: Component → API Route → Database → Inngest
+- Emphasize **type safety**: TypeScript → Drizzle → Zod validation
+- Demonstrate **TanStack Query** benefits: caching, optimistic updates
+- Highlight **modern patterns**: Server Components, Server Actions, centralized queries
+
+---
+
+### 🔑 Key Code Patterns (Quick Reference)
+
+#### Pattern 1: TanStack Query (GET operations)
+```typescript
+// lib/queries/questions.ts
+import { useQuery } from "@tanstack/react-query";
+import { api, questionKeys } from "@/lib/api";
+
+export const useQuestion = (id: string) => {
+  return useQuery({
+    queryKey: questionKeys.detail(id),
+    queryFn: () => api.questions.getById(id),
+    staleTime: 30_000, // Cache for 30 seconds
+  });
+};
+```
+
+#### Pattern 2: TanStack Mutation (POST/PUT/DELETE)
+```typescript
+// lib/mutations/votes.ts
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, questionKeys } from "@/lib/api";
+
+export const useVote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: api.votes.vote,
+    onMutate: async (variables) => {
+      // Optimistic update - UI updates instantly
+      const previousData = queryClient.getQueryData(
+        questionKeys.detail(variables.itemId)
+      );
+      // Update cache immediately...
+      return { previousData };
+    },
+    onError: (_err, _variables, context) => {
+      // Rollback on error
+      queryClient.setQueryData(
+        questionKeys.detail(_variables.itemId),
+        context?.previousData
+      );
+    },
+    onSuccess: () => {
+      // Invalidate to refetch from server
+      queryClient.invalidateQueries({ queryKey: questionKeys.all });
+    },
+  });
+};
+```
+
+#### Pattern 3: Inngest Background Function
+```typescript
+// inngest/functions/generate-ai-answer.ts
+import { inngest } from "@/lib/inngest";
+import { openai } from "@/lib/openai";
+
+export const generateAIAnswer = inngest.createFunction(
+  {
+    id: "generate-ai-answer",
+    name: "Generate AI Answer for Question",
+    concurrency: { limit: 5 }, // Max 5 concurrent
+  },
+  { event: "question.created" }, // Trigger
+  async ({ event, step }) => {
+    // Step 1: Fetch question
+    const question = await step.run("fetch-question", async () => {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/questions/${event.data.questionId}`);
+      return res.json();
+    });
+
+    // Step 2: Call OpenAI with vision
+    const answer = await step.run("generate-answer", async () => {
+      const messages = [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: question.content },
+            // Add images if present
+            ...imageUrls.map((url) => ({
+              type: "image_url",
+              image_url: { url },
+            })),
+          ],
+        },
+      ];
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages,
+      });
+
+      return completion.choices[0].message.content;
+    });
+
+    // Step 3: Save to database
+    await step.run("save-answer", async () => {
+      await fetch(`${process.env.NEXT_PUBLIC_APP_URL}/api/answers`, {
+        method: "POST",
+        body: JSON.stringify({
+          questionId: question.id,
+          content: answer,
+          userId: "ai-bot",
+        }),
+      });
+    });
+  }
+);
+```
+
+#### Pattern 4: Drizzle Schema (Type-safe Database)
+```typescript
+// lib/schema.ts
+import { pgTable, text, integer, timestamp, boolean, index } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+
+export const questions = pgTable("questions", {
+  id: text("id").primaryKey(),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  authorId: text("author_id").notNull(),
+  images: text("images").array(), // Array of image keys
+  votes: integer("votes").default(0),
+  viewCount: integer("view_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  authorIdx: index("questions_author_idx").on(table.authorId),
+}));
+
+// Type inference - use in your code
+export type Question = typeof questions.$inferSelect;
+export type NewQuestion = typeof questions.$inferInsert;
+```
+
+---
+
+### 💡 What Students Will Learn
+
+1. **Modern Next.js 16** - App Router, Server Components, streaming
+2. **Type Safety End-to-End** - TypeScript + Drizzle + Zod
+3. **Enterprise State Management** - TanStack Query patterns
+4. **Event-Driven Architecture** - Inngest for background jobs
+5. **AI Integration** - OpenAI GPT-5 + Vision API
+6. **Cloud Services** - AWS S3, Neon Postgres, Upstash Redis
+7. **Authentication** - Better Auth with OAuth
+8. **Production Patterns** - Rate limiting, validation, error handling
+
+---
+
+## 📖 For Students: Complete Guide
+
+### Features
 
 - **Instant AI Responses**: Every question gets an AI-generated answer within seconds using GPT-5
 - **GPT-5 Vision Support**: AI can analyze images attached to questions (up to 4 images per question)
 - **Smart Auto-Tagging**: AI automatically categorizes and tags questions using GPT-5 Mini
 - **Image Upload**: Upload up to 4 images per question/answer using AWS S3 presigned URLs
 - **Full-Text Search**: Fast PostgreSQL-powered search across questions and answers
-- **Rate Limiting**: Upstash Redis-based rate limiting to prevent abuse
+- **Rate Limiting**: Upstash Redis-based rate limiting (10 requests per 10 seconds)
 - **Voting & Reputation**: Stack Overflow-style voting system with reputation points
+  - Upvote question/answer: +5 reputation
+  - Downvote: -2 reputation
+  - Accepted answer: +15 reputation
 - **User Profiles**: Comprehensive user profiles showing stats, questions, and answers
-- **Full Authentication**: Email/password + OAuth (GitHub & Google) with Better Auth
+- **Full Authentication**: Email/password (8+ chars) + OAuth (GitHub & Google) with Better Auth
 - **Event-Driven Architecture**: Reliable background processing with Inngest
+- **Answer Management**: Accept best answer, delete answers, vote on answers
+- **Email Notifications**: Welcome emails, answer notifications, accepted answer alerts
 - **Modern UI**: Beautiful, responsive design with Tailwind CSS v4 and shadcn/ui
 - **Serverless-First**: Built for scale using Neon Postgres and Vercel
 
-## Tech Stack
+---
 
-### Frontend
+### Tech Stack
 
-- Next.js 16 (App Router, TypeScript)
-- Tailwind CSS v4
-- shadcn/ui components
-- TanStack Query (React Query)
-- React Hook Form with Zod validation
+#### Frontend
+- **Next.js 16.0.1** - Latest RC with App Router, TypeScript 5
+- **React 19.2.0** - Cutting-edge React with new compiler
+- **Tailwind CSS v4** - Latest version with new architecture
+- **shadcn/ui** - 14+ high-quality UI components
+- **TanStack Query 5.90.6** - Powerful data synchronization
+- **React Hook Form 7.66.0** - Performant form handling
+- **Zod 4.1.12** - TypeScript-first schema validation
+- **Lucide React 0.552.0** - Beautiful icon library
+- **next-themes** - Dark/light mode support
 
-### Backend
+#### Content Rendering
+- **react-markdown 10.1.0** - Markdown rendering
+- **react-syntax-highlighter 16.1.0** - Code highlighting
+- **remark-gfm 4.0.1** - GitHub Flavored Markdown
+- **rehype-raw 7.0.0** - HTML in Markdown support
 
-- Node.js 20+ (Next.js API Routes)
-- TypeScript 5.3+
-- Better Auth v1.3+
-- Drizzle ORM v0.44+
-- Neon Postgres (serverless)
-- Inngest v3.0+ (background jobs)
+#### Backend & Database
+- **Next.js API Routes** - RESTful API endpoints
+- **TypeScript 5.3+** - Full type safety
+- **Better Auth 1.3.34** - Modern authentication library
+  - Email/password authentication
+  - OAuth (GitHub & Google)
+  - Session management with cookies
+- **Drizzle ORM 0.44.7** - Type-safe SQL query builder
+- **Neon Postgres** (@neondatabase/serverless 1.0.2) - Serverless PostgreSQL
+- **Inngest 3.44.4** - Event-driven background job processing
+  - AI answer generation
+  - Email notifications
+  - Reliable execution with retries
 
-### AI & Services
+#### AI & Services
+- **OpenAI 6.7.0** - AI-powered answers and tagging
+  - GPT-5 for main answers with vision support
+  - GPT-5 Mini for auto-tagging (cost-optimized)
+- **AWS S3** - Image storage with presigned URLs
+  - @aws-sdk/client-s3 3.922.0
+  - @aws-sdk/s3-request-presigner 3.922.0
+- **Upstash Redis** - Rate limiting with sliding window
+  - @upstash/ratelimit 2.0.7
+  - @upstash/redis 1.35.6
+- **Resend 6.4.0** - Transactional email service
+- **React Email 4.3.2** - Beautiful email templates
 
-- OpenAI GPT-5 (main answers with vision support) & GPT-5 Mini (tagging)
-- AWS S3 (image storage with presigned URLs)
-- Upstash Redis (rate limiting)
-- Resend (email service)
-- React Email (email templates)
+#### Utilities
+- **date-fns 4.1.0** - Date formatting and manipulation
+- **nanoid 5.1.6** - Unique ID generation
+- **clsx & tailwind-merge** - Conditional CSS classes
+- **class-variance-authority** - Component variant styling
+- **sonner 2.0.7** - Toast notifications
 
-## Getting Started
+#### Development Tools
+- **Drizzle Kit 0.31.6** - Database migration tool
+- **ESLint** - Code linting
+- **tsx** - TypeScript execution
 
-### Prerequisites
+---
 
+### Getting Started
+
+#### Prerequisites
+
+**Required:**
 - Node.js 20 or higher
-- A Neon Postgres database
-- OpenAI API key
-- Inngest account
+- A Neon Postgres database (free tier available)
+- OpenAI API key (GPT-5 access required)
+- Inngest account (free tier available)
+
+**Optional (features work without these):**
 - AWS S3 bucket (for image uploads)
 - Upstash Redis database (for rate limiting)
 - Resend API key (for emails)
-- GitHub/Google OAuth credentials (optional)
+- GitHub/Google OAuth credentials (for social login)
 
-### Installation
+#### Installation
 
 1. **Install dependencies**
 
@@ -67,30 +463,50 @@ A modern, Stack Overflow-style Q&A platform where every question receives instan
 
 2. **Setup environment variables**
 
-   Copy `.env.example` to `.env.local` and fill in your credentials:
+   Copy `.env-example.local` to `.env.local` and fill in your credentials:
 
    ```bash
-   cp .env.example .env.local
+   cp .env-example.local .env.local
    ```
 
-   Required environment variables:
-   - `DATABASE_URL`: Your Neon Postgres connection string
-   - `BETTER_AUTH_SECRET`: Generate with `openssl rand -base64 32`
-   - `NEXT_PUBLIC_APP_URL`: Your app URL (e.g., http://localhost:3000)
-   - `OPENAI_API_KEY`: Your OpenAI API key
-   - `INNGEST_EVENT_KEY`: From Inngest dashboard
-   - `INNGEST_SIGNING_KEY`: From Inngest dashboard
-   - `RESEND_API_KEY`: Your Resend API key
-   - `AWS_REGION`: AWS region for S3 (e.g., us-east-1)
-   - `AWS_ACCESS_KEY_ID`: AWS access key
-   - `AWS_SECRET_ACCESS_KEY`: AWS secret key
-   - `AWS_S3_BUCKET_NAME`: S3 bucket name
-   - `UPSTASH_REDIS_REST_URL`: Upstash Redis REST URL
-   - `UPSTASH_REDIS_REST_TOKEN`: Upstash Redis REST token
+   **Required environment variables:**
+   ```env
+   # Database
+   DATABASE_URL=postgresql://user:pass@host/db  # Neon Postgres connection string
 
-   Optional (for OAuth):
-   - `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
-   - `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
+   # Auth
+   BETTER_AUTH_SECRET=your-secret-here  # Generate: openssl rand -base64 32
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+   # AI
+   OPENAI_API_KEY=sk-...  # Your OpenAI API key (GPT-5 access)
+
+   # Background Jobs
+   INNGEST_EVENT_KEY=your-event-key  # From Inngest dashboard
+   INNGEST_SIGNING_KEY=your-signing-key  # From Inngest dashboard
+   ```
+
+   **Optional environment variables:**
+   ```env
+   # Image Uploads (optional - feature disabled if not set)
+   AWS_REGION=us-east-1
+   AWS_ACCESS_KEY_ID=your-access-key
+   AWS_SECRET_ACCESS_KEY=your-secret-key
+   AWS_S3_BUCKET_NAME=your-bucket-name
+
+   # Rate Limiting (optional - rate limiting skipped if not set)
+   UPSTASH_REDIS_REST_URL=https://...
+   UPSTASH_REDIS_REST_TOKEN=...
+
+   # Emails (optional - emails won't send but app runs)
+   RESEND_API_KEY=re_...
+
+   # OAuth (optional - email/password still works)
+   GITHUB_CLIENT_ID=your-github-client-id
+   GITHUB_CLIENT_SECRET=your-github-client-secret
+   GOOGLE_CLIENT_ID=your-google-client-id
+   GOOGLE_CLIENT_SECRET=your-google-client-secret
+   ```
 
 3. **Setup database**
 
@@ -109,7 +525,7 @@ A modern, Stack Overflow-style Q&A platform where every question receives instan
 
    Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-5. **Setup Inngest Dev Server** (optional for local development)
+5. **Setup Inngest Dev Server** (recommended for local development)
 
    In a separate terminal:
 
@@ -117,145 +533,894 @@ A modern, Stack Overflow-style Q&A platform where every question receives instan
    npx inngest-cli@latest dev
    ```
 
-   This will start the Inngest dev server at [http://localhost:8288](http://localhost:8288) where you can view function execution logs.
+   This will start the Inngest dev server at [http://localhost:8288](http://localhost:8288) where you can view function execution logs and trigger events manually.
 
-## Project Structure
+---
+
+### Project Structure
 
 ```
 project/
-├── app/                      # Next.js app directory
-│   ├── api/                 # API routes
-│   │   ├── auth/           # Better Auth endpoints
-│   │   ├── inngest/        # Inngest function handler
-│   │   ├── questions/      # Question CRUD + voting
-│   │   ├── answers/        # Answer CRUD + voting
-│   │   ├── users/          # User profile endpoints
-│   │   ├── search/         # Full-text search endpoint
-│   │   └── upload/         # S3 presigned URL generation
-│   ├── auth/               # Auth pages
-│   │   ├── signin/         # Sign in page
-│   │   └── signup/         # Sign up page
-│   ├── questions/          # Question pages
-│   │   ├── [id]/          # Question detail page
-│   │   ├── ask/           # Ask question page (with image upload)
-│   │   └── page.tsx       # Questions list page
-│   ├── search/            # Search page
-│   │   └── page.tsx       # Search results page
-│   ├── users/             # User pages
-│   │   └── [id]/          # User profile page
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Home page
-├── components/             # React components
-│   ├── ui/                # shadcn/ui components
-│   ├── header.tsx         # Dynamic header with auth
-│   ├── vote-buttons.tsx   # Voting component
-│   ├── image-upload.tsx   # S3 image upload component (max 4 images)
-│   └── providers.tsx      # React Query provider
-├── inngest/               # Inngest functions
+├── app/                          # Next.js 16 App Router
+│   ├── api/                      # API Routes (RESTful endpoints)
+│   │   ├── auth/                 # Better Auth API endpoints
+│   │   ├── inngest/              # Inngest webhook handler
+│   │   ├── questions/            # Question CRUD + voting
+│   │   │   ├── [id]/            # Get single question
+│   │   │   ├── vote/            # Vote on question
+│   │   │   └── route.ts         # List questions, create question
+│   │   ├── answers/              # Answer CRUD + voting + accept
+│   │   │   ├── [id]/            # Delete answer, accept answer
+│   │   │   ├── vote/            # Vote on answer
+│   │   │   └── route.ts         # Create answer
+│   │   ├── users/                # User profile endpoints
+│   │   │   └── [id]/            # Get user profile
+│   │   ├── search/               # Full-text search
+│   │   │   └── route.ts         # Search questions & answers
+│   │   └── upload/               # S3 presigned URL generation
+│   │       ├── presigned-url/    # Generate upload URLs
+│   │       └── image-url/        # Get image URLs for Inngest
+│   ├── auth/                     # Auth pages
+│   │   ├── signin/               # Sign in page
+│   │   │   └── page.tsx
+│   │   └── signup/               # Sign up page
+│   │       └── page.tsx
+│   ├── questions/                # Question pages
+│   │   ├── [id]/                 # Question detail (dynamic route)
+│   │   │   └── page.tsx
+│   │   ├── ask/                  # Create question form
+│   │   │   └── page.tsx
+│   │   └── page.tsx              # Questions list with pagination
+│   ├── search/                   # Search functionality
+│   │   └── page.tsx              # Search results page
+│   ├── users/                    # User profiles
+│   │   └── [id]/                 # User profile page (dynamic route)
+│   │       └── page.tsx
+│   ├── settings/                 # User settings
+│   │   └── page.tsx              # Edit profile page
+│   ├── actions/                  # Server actions (future use)
+│   ├── layout.tsx                # Root layout with header
+│   └── page.tsx                  # Home page (hero + features)
+│
+├── components/                   # React components
+│   ├── ui/                       # shadcn/ui components (14 components)
+│   │   ├── button.tsx
+│   │   ├── input.tsx
+│   │   ├── badge.tsx
+│   │   ├── card.tsx
+│   │   ├── markdown-editor.tsx   # Custom markdown editor
+│   │   ├── pagination.tsx
+│   │   ├── alert-dialog.tsx
+│   │   ├── dropdown-menu.tsx
+│   │   ├── avatar.tsx
+│   │   ├── tabs.tsx
+│   │   ├── label.tsx
+│   │   ├── textarea.tsx
+│   │   ├── dialog.tsx
+│   │   └── skeleton.tsx
+│   ├── header.tsx                # Dynamic header with auth state
+│   ├── vote-buttons.tsx          # Upvote/downvote component
+│   ├── image-upload.tsx          # S3 image upload (max 4 images)
+│   ├── image-display.tsx         # Display uploaded images
+│   ├── image-modal.tsx           # Full-screen image viewer
+│   ├── profile-edit-form.tsx     # Edit user profile
+│   └── providers.tsx             # React Query provider
+│
+├── inngest/                      # Background job functions
+│   ├── client.ts                 # Inngest client configuration
 │   └── functions/
-│       ├── generate-ai-answer.ts  # GPT-5 answer generation with vision
-│       ├── send-welcome-email.ts  # Welcome email
-│       ├── send-answer-notification.ts  # New answer email alerts
+│       ├── generate-ai-answer.ts          # GPT-5 + vision + tagging
+│       ├── send-welcome-email.ts          # Welcome email
+│       ├── send-answer-notification.ts    # Answer alert emails
 │       └── send-answer-accepted-notification.ts  # Accepted answer email
-├── lib/                   # Utility files
-│   ├── api/              # Centralized API & query management
-│   │   ├── index.ts      # API client, Zod schemas, types
-│   │   ├── queries/      # TanStack Query hooks (GET operations)
-│   │   │   ├── questions.ts
-│   │   │   ├── users.ts
-│   │   │   ├── search.ts
-│   │   │   └── images.ts
-│   │   └── mutations/    # TanStack Mutation hooks (POST/PUT/DELETE)
-│   │       ├── questions.ts
-│   │       ├── answers.ts
-│   │       ├── votes.ts
-│   │       └── images.ts
-│   ├── schema.ts         # Drizzle database schema
-│   ├── db.ts             # Database connection
-│   ├── auth.ts           # Better Auth server config
-│   ├── auth-client.ts    # Better Auth client hooks
-│   ├── inngest.ts        # Inngest client
-│   ├── s3.ts             # AWS S3 client configuration
-│   ├── rate-limit.ts     # Upstash Redis rate limiting
-│   └── utils.ts          # Helper functions
-├── proxy.ts               # Next.js 16 proxy for rate limiting
-└── drizzle/              # Database migrations
+│
+├── lib/                          # Core utilities
+│   ├── api/
+│   │   └── index.ts              # API client, query keys, Zod types
+│   ├── queries/                  # TanStack Query (GET operations)
+│   │   ├── questions.ts          # useQuestions, useQuestion
+│   │   ├── users.ts              # useUser
+│   │   ├── search.ts             # useSearch
+│   │   └── images.ts             # usePresignedUrl
+│   ├── mutations/                # TanStack Mutations (POST/PUT/DELETE)
+│   │   ├── questions.ts          # useCreateQuestion
+│   │   ├── answers.ts            # useCreateAnswer, useAcceptAnswer, useDeleteAnswer
+│   │   ├── votes.ts              # useVote
+│   │   └── images.ts             # useUploadImages
+│   ├── validations/              # Zod validation schemas
+│   │   ├── question.ts           # Question/answer validation
+│   │   ├── profile.ts            # Profile validation
+│   │   └── auth.ts               # Auth validation
+│   ├── schema.ts                 # Drizzle database schema
+│   ├── db.ts                     # Neon Postgres connection
+│   ├── auth.ts                   # Better Auth server config
+│   ├── auth-client.ts            # Better Auth React hooks
+│   ├── auth-middleware.ts        # Auth middleware for protected routes
+│   ├── inngest.ts                # Inngest client
+│   ├── s3.ts                     # AWS S3 client
+│   ├── rate-limit.ts             # Upstash Redis rate limiter
+│   └── utils.ts                  # Helper functions (cn, etc.)
+│
+├── drizzle/                      # Database migrations
+├── public/                       # Static assets
+├── .env.local                    # Environment variables (not in git)
+├── .env-example.local            # Environment template
+├── package.json                  # Dependencies
+├── next.config.ts                # Next.js configuration
+├── drizzle.config.ts             # Drizzle ORM configuration
+├── tsconfig.json                 # TypeScript configuration
+├── tailwind.config.ts            # Tailwind configuration
+├── components.json               # shadcn/ui configuration
+└── proxy.ts                      # Next.js 16 proxy for rate limiting
 ```
 
-## Available Scripts
+---
 
-- `npm run dev` - Start development server
+### Available Scripts
+
+- `npm run dev` - Start development server (port 3000)
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 - `npm run db:generate` - Generate database migrations
-- `npm run db:push` - Push schema to database
+- `npm run db:push` - Push schema to database (no migrations)
 - `npm run db:studio` - Open Drizzle Studio (database GUI)
 
-## Centralized Query Management
+---
 
-This project uses a centralized query management system built with TanStack Query (React Query). All API calls are organized in dedicated folders rather than scattered throughout components.
+### Centralized Query Management
 
-### Structure
+This project uses a **centralized query management system** built with TanStack Query (React Query). All API calls are organized in dedicated folders rather than scattered throughout components.
 
-- **`lib/api/`** - API client, Zod schemas, and type definitions with runtime validation
+#### Structure
+
+- **`lib/api/index.ts`** - API client, Zod schemas, and type definitions with runtime validation
 - **`lib/queries/`** - Read operations (GET requests) with TanStack Query hooks
 - **`lib/mutations/`** - Write operations (POST, PUT, DELETE) with TanStack Mutation hooks
 
-### Benefits
+#### Benefits
 
 - **Type Safety**: Zod schemas provide runtime validation and TypeScript types
 - **Code Organization**: All API logic centralized in dedicated folders
 - **Caching**: Automatic caching, background refetching, and stale-while-revalidate
-- **Optimistic Updates**: Better UX with immediate UI updates
+- **Optimistic Updates**: Better UX with immediate UI updates (voting, etc.)
 - **Error Handling**: Centralized error handling with retry logic
 - **Performance**: Query deduplication and intelligent cache management
+- **DevTools**: React Query DevTools for debugging
 
-### Usage Examples
+#### Usage Examples
 
 ```tsx
-// Using queries
-import { useQuestions, useQuestion } from "@/lib/queries";
-const { data, isLoading } = useQuestions(1);
-const { data: question } = useQuestion(id);
+// Using queries (GET operations)
+import { useQuestions, useQuestion } from "@/lib/queries/questions";
+import { useUser } from "@/lib/queries/users";
 
-// Using mutations
-import { useCreateQuestion, useVote } from "@/lib/mutations";
-const createQuestion = useCreateQuestion(); // Handles navigation and cache invalidation
-const vote = useVote(); // Handles optimistic updates and cache invalidation
+function QuestionsPage() {
+  const { data: questions, isLoading } = useQuestions(1); // Page 1
+  const { data: user } = useUser(userId);
+
+  // Data is automatically cached and revalidated
+}
+
+// Using mutations (POST/PUT/DELETE operations)
+import { useCreateQuestion } from "@/lib/mutations/questions";
+import { useVote } from "@/lib/mutations/votes";
+
+function AskQuestionPage() {
+  const createQuestion = useCreateQuestion();
+
+  const handleSubmit = (data) => {
+    createQuestion.mutate(data, {
+      onSuccess: () => {
+        // Automatic navigation and cache invalidation
+        router.push(`/questions/${response.id}`);
+      },
+    });
+  };
+}
+
+// Optimistic updates (immediate UI feedback)
+function VoteButtons({ questionId, initialVotes }) {
+  const vote = useVote();
+
+  const handleVote = (voteType) => {
+    vote.mutate({ itemId: questionId, voteType });
+    // UI updates immediately, rolls back on error
+  };
+}
 ```
 
-## Key Features Implementation Status
+---
+
+## 🚀 Technical Deep Dive
+
+### Database Schema Overview
+
+The database is designed with separation of concerns and proper indexing:
+
+**Core Tables:**
+- `users` - Authentication data (Better Auth)
+- `userProfile` - Extended user info (name, bio, reputation, etc.)
+- `questions` - Questions with images array, votes, view count
+- `answers` - Answers with soft delete, votes, accepted flag
+- `tags` - Tag definitions with usage count
+- `questionTags` - Junction table (many-to-many)
+- `questionVotes` & `answerVotes` - Voting records with unique constraints
+
+**Key Features:**
+- Array columns for images (PostgreSQL arrays)
+- Indexes on foreign keys and frequently queried fields
+- Soft deletes with `isDeleted` flag
+- Timestamps for auditing (`createdAt`, `updatedAt`)
+- Drizzle relations for type-safe joins
+
+**View Schema:**
+```bash
+npm run db:studio  # Opens Drizzle Studio in browser
+```
+
+---
+
+### How TanStack Query Works
+
+**Query Keys (Hierarchical):**
+```typescript
+// lib/api/index.ts
+export const questionKeys = {
+  all: ["questions"] as const,
+  lists: () => [...questionKeys.all, "list"] as const,
+  list: (page: number) => [...questionKeys.lists(), page] as const,
+  details: () => [...questionKeys.all, "detail"] as const,
+  detail: (id: string) => [...questionKeys.details(), id] as const,
+};
+```
+
+**Benefits:**
+- Precise cache invalidation
+- Easy to clear all questions: `invalidateQueries({ queryKey: questionKeys.all })`
+- Clear specific question: `invalidateQueries({ queryKey: questionKeys.detail(id) })`
+
+**Example Query:**
+```typescript
+// lib/queries/questions.ts
+export const useQuestion = (id: string) => {
+  return useQuery({
+    queryKey: questionKeys.detail(id),
+    queryFn: () => api.questions.getById(id),
+    staleTime: 30_000, // Consider fresh for 30 seconds
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+  });
+};
+```
+
+**Example Mutation with Optimistic Update:**
+```typescript
+// lib/mutations/votes.ts
+export const useVote = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: api.votes.vote,
+    onMutate: async (variables) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({
+        queryKey: questionKeys.detail(variables.itemId),
+      });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(
+        questionKeys.detail(variables.itemId)
+      );
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(
+        questionKeys.detail(variables.itemId),
+        (old: any) => ({
+          ...old,
+          votes: old.votes + (variables.voteType === "up" ? 1 : -1),
+        })
+      );
+
+      return { previousData };
+    },
+    onError: (_err, variables, context) => {
+      // Rollback to previous value on error
+      queryClient.setQueryData(
+        questionKeys.detail(variables.itemId),
+        context?.previousData
+      );
+    },
+    onSettled: () => {
+      // Refetch to ensure sync with server
+      queryClient.invalidateQueries({ queryKey: questionKeys.all });
+    },
+  });
+};
+```
+
+---
+
+### How Inngest Works
+
+**Event Flow:**
+1. API route sends event: `inngest.send({ name: "question.created", data: { questionId } })`
+2. Inngest receives event, queues function execution
+3. Function runs with retry logic and concurrency limits
+4. Steps are tracked, can be resumed on failure
+
+**Function Structure:**
+```typescript
+// inngest/functions/generate-ai-answer.ts
+export const generateAIAnswer = inngest.createFunction(
+  {
+    id: "generate-ai-answer",
+    name: "Generate AI Answer for Question",
+    concurrency: { limit: 5 }, // Max 5 concurrent executions
+    retries: 3, // Retry 3 times on failure
+  },
+  { event: "question.created" }, // Trigger on this event
+  async ({ event, step }) => {
+    // Each step is tracked and can be retried independently
+
+    const question = await step.run("fetch-question", async () => {
+      // This step runs once, result is cached
+      return await fetchQuestion(event.data.questionId);
+    });
+
+    const imageUrls = await step.run("get-image-urls", async () => {
+      if (!question.images?.length) return [];
+      // Get presigned URLs for images
+      return await getImageUrls(question.images);
+    });
+
+    const answer = await step.run("generate-answer", async () => {
+      // Call OpenAI with vision if images present
+      const messages = [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: question.content },
+            ...imageUrls.map((url) => ({
+              type: "image_url",
+              image_url: { url },
+            })),
+          ],
+        },
+      ];
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5",
+        messages,
+      });
+
+      return completion.choices[0].message.content;
+    });
+
+    const tags = await step.run("generate-tags", async () => {
+      // Use cheaper GPT-5 Mini for tagging
+      const completion = await openai.chat.completions.create({
+        model: "gpt-5-mini",
+        messages: [
+          {
+            role: "system",
+            content: "Generate 3-5 relevant tags for this question.",
+          },
+          { role: "user", content: question.title },
+        ],
+      });
+
+      return completion.choices[0].message.content.split(",");
+    });
+
+    await step.run("save-answer-and-tags", async () => {
+      // Save answer to database
+      await saveAnswer({
+        questionId: question.id,
+        content: answer,
+        userId: "ai-bot",
+      });
+
+      // Save tags
+      await saveTags(question.id, tags);
+    });
+  }
+);
+```
+
+**Viewing Function Execution:**
+- Local: `npx inngest-cli@latest dev` → http://localhost:8288
+- Production: Inngest dashboard → view logs, replay events, monitor
+
+---
+
+### How Image Upload Works (S3 Presigned URLs)
+
+**Flow:**
+1. **Client requests presigned URL**: `POST /api/upload/presigned-url`
+2. **Server generates URL**: S3 SDK creates temporary upload URL (expires in 5 minutes)
+3. **Client uploads directly to S3**: Browser sends file to S3, not our server
+4. **Client sends image key**: After upload, client sends S3 key to API
+5. **Server saves key in database**: Stored in `images` array column
+
+**Security Benefits:**
+- Files never touch our server (saves bandwidth, faster uploads)
+- Presigned URLs expire quickly (5 minutes)
+- S3 bucket is private, only presigned URLs grant access
+- Server validates file type and size before generating URL
+
+**Code Example:**
+```typescript
+// components/image-upload.tsx
+const uploadImages = useUploadImages();
+
+const handleUpload = async (files: File[]) => {
+  const uploadPromises = files.map(async (file) => {
+    // Step 1: Get presigned URL
+    const { url, key } = await getPresignedUrl(file.name, file.type);
+
+    // Step 2: Upload directly to S3
+    await fetch(url, {
+      method: "PUT",
+      body: file,
+      headers: { "Content-Type": file.type },
+    });
+
+    return key; // Return S3 key
+  });
+
+  const imageKeys = await Promise.all(uploadPromises);
+
+  // Step 3: Store keys in form state
+  setImages(imageKeys);
+};
+```
+
+---
+
+### How Rate Limiting Works
+
+**Implementation:**
+- Upstash Redis with sliding window algorithm
+- 10 requests per 10 seconds per IP address
+- Implemented in Next.js 16 proxy layer
+
+**Code:**
+```typescript
+// lib/rate-limit.ts
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+export const ratelimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(10, "10 s"),
+  analytics: true,
+});
+
+// proxy.ts (Next.js 16 proxy)
+export default async function middleware(request: NextRequest) {
+  const ip = request.ip ?? "127.0.0.1";
+  const { success } = await ratelimit.limit(ip);
+
+  if (!success) {
+    return new Response("Too Many Requests", { status: 429 });
+  }
+
+  return NextResponse.next();
+}
+```
+
+---
+
+### Adding a New Feature (Step-by-Step)
+
+**Example: Add "Follow User" feature**
+
+1. **Update Database Schema** (`lib/schema.ts`):
+```typescript
+export const follows = pgTable("follows", {
+  id: text("id").primaryKey(),
+  followerId: text("follower_id").notNull(),
+  followingId: text("following_id").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+```
+
+2. **Generate Migration**:
+```bash
+npm run db:generate
+npm run db:push
+```
+
+3. **Create API Route** (`app/api/users/[id]/follow/route.ts`):
+```typescript
+import { db } from "@/lib/db";
+import { follows } from "@/lib/schema";
+
+export async function POST(request: Request) {
+  const { followingId } = await request.json();
+  const session = await auth.api.getSession({ headers: request.headers });
+
+  await db.insert(follows).values({
+    id: nanoid(),
+    followerId: session.user.id,
+    followingId,
+  });
+
+  return Response.json({ success: true });
+}
+```
+
+4. **Create Mutation Hook** (`lib/mutations/follows.ts`):
+```typescript
+export const useFollowUser = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (userId: string) =>
+      fetch(`/api/users/${userId}/follow`, {
+        method: "POST",
+        body: JSON.stringify({ followingId: userId }),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all });
+    },
+  });
+};
+```
+
+5. **Use in Component** (`components/follow-button.tsx`):
+```typescript
+"use client";
+import { useFollowUser } from "@/lib/mutations/follows";
+
+export function FollowButton({ userId }) {
+  const followUser = useFollowUser();
+
+  return (
+    <button onClick={() => followUser.mutate(userId)}>
+      Follow
+    </button>
+  );
+}
+```
+
+---
+
+## ⚠️ Troubleshooting & Common Pitfalls
+
+### Next.js 16 Compatibility Issues
+
+**Problem:** Package compatibility errors with Next.js 16 RC
+```
+Error: Module not found or type errors
+```
+
+**Solution:**
+- Next.js 16 is in RC (Release Candidate), some packages may not be fully compatible
+- Check `package.json` for `"overrides"` section that forces compatible versions
+- If issues persist, consider downgrading to Next.js 15 (stable) until 16 is released
+
+---
+
+### Inngest Local Development
+
+**Problem:** Events not triggering locally
+```
+Function not executing when sending events
+```
+
+**Solution:**
+1. Ensure Inngest dev server is running: `npx inngest-cli@latest dev`
+2. Check that `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` are set in `.env.local`
+3. Verify webhook is registered: Visit http://localhost:8288 and check "Apps" tab
+4. Manually trigger events in Inngest UI to test functions
+5. Check console logs in both Next.js terminal and Inngest terminal
+
+**Tip:** Use Inngest UI to view function execution logs and retry failed runs
+
+---
+
+### S3 CORS Configuration
+
+**Problem:** Image uploads fail with CORS error
+```
+Access to fetch at 'https://s3.amazonaws.com/...' from origin 'http://localhost:3000' has been blocked by CORS policy
+```
+
+**Solution:**
+Add CORS policy to your S3 bucket:
+
+```json
+[
+  {
+    "AllowedHeaders": ["*"],
+    "AllowedMethods": ["PUT", "POST", "GET"],
+    "AllowedOrigins": ["http://localhost:3000", "https://your-domain.com"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3000
+  }
+]
+```
+
+**Steps:**
+1. Go to AWS S3 Console → Your Bucket → Permissions → CORS
+2. Paste the above configuration
+3. Replace `https://your-domain.com` with your production URL
+
+---
+
+### OAuth Redirect URI Configuration
+
+**Problem:** OAuth login fails with redirect URI mismatch
+```
+Error: redirect_uri_mismatch
+```
+
+**Solution:**
+
+**GitHub OAuth:**
+1. Go to GitHub Settings → Developer Settings → OAuth Apps → Your App
+2. Set Authorization callback URL to: `http://localhost:3000/api/auth/callback/github`
+3. For production: `https://your-domain.com/api/auth/callback/github`
+
+**Google OAuth:**
+1. Go to Google Cloud Console → APIs & Services → Credentials → Your OAuth Client
+2. Add Authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
+3. For production: `https://your-domain.com/api/auth/callback/google`
+
+---
+
+### Database Connection Issues
+
+**Problem:** Database connection timeout or SSL errors
+```
+Error: connection timeout
+```
+
+**Solution:**
+1. **Check Neon connection string format**: Should include `?sslmode=require`
+   ```
+   postgresql://user:pass@host/db?sslmode=require
+   ```
+2. **Enable pooling** (recommended for serverless):
+   ```
+   postgresql://user:pass@host/db?sslmode=require&connection_limit=10
+   ```
+3. **Check IP allowlist** in Neon dashboard (if enabled)
+4. **Test connection**: Run `npm run db:studio` to verify database access
+
+---
+
+### Email Not Sending (Resend)
+
+**Problem:** Emails not being sent
+```
+No emails arriving, no errors in console
+```
+
+**Solution:**
+1. **Check environment variable**: Verify `RESEND_API_KEY` is set correctly
+2. **Verify domain**: In Resend dashboard, check if domain is verified
+3. **Check sender email**: Must be from verified domain (e.g., `noreply@your-domain.com`)
+4. **Check Inngest logs**: Emails are sent via background jobs, check function execution logs
+5. **Development mode**: Resend sends test emails to registered email only
+
+**Note:** App runs without Resend - emails just won't send
+
+---
+
+### Rate Limiting Not Working
+
+**Problem:** Rate limiting not being applied
+```
+Requests not being rate limited
+```
+
+**Solution:**
+1. **Check environment variables**: `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` must be set
+2. **Verify Redis connection**: Test in Upstash dashboard
+3. **Check proxy setup**: Rate limiting is in `proxy.ts`, ensure it's properly configured
+4. **Development note**: If variables not set, rate limiting is silently skipped (by design)
+
+---
+
+### Common Student Mistakes
+
+#### 1. Forgetting to run database migrations
+```bash
+# Always run after pulling new code or changing schema
+npm run db:generate
+npm run db:push
+```
+
+#### 2. Not wrapping client components with "use client"
+```typescript
+// components/vote-buttons.tsx
+"use client";  // ← Don't forget this for interactive components!
+
+import { useVote } from "@/lib/mutations/votes";
+
+export function VoteButtons() {
+  // ...
+}
+```
+
+#### 3. Mutating state directly in optimistic updates
+```typescript
+// ❌ Wrong - mutates original object
+onMutate: async (variables) => {
+  const previous = queryClient.getQueryData(key);
+  previous.votes++; // Don't mutate!
+  return { previous };
+};
+
+// ✅ Correct - create new object
+onMutate: async (variables) => {
+  const previous = queryClient.getQueryData(key);
+  queryClient.setQueryData(key, { ...previous, votes: previous.votes + 1 });
+  return { previous };
+};
+```
+
+#### 4. Not handling loading and error states
+```typescript
+// Always handle all states
+const { data, isLoading, isError, error } = useQuestions(page);
+
+if (isLoading) return <Skeleton />;
+if (isError) return <div>Error: {error.message}</div>;
+if (!data) return <div>No data</div>;
+
+return <QuestionList questions={data} />;
+```
+
+#### 5. Forgetting to invalidate queries after mutations
+```typescript
+// Always invalidate to sync UI with server
+onSuccess: () => {
+  queryClient.invalidateQueries({ queryKey: questionKeys.all });
+  // UI will refetch and show updated data
+},
+```
+
+---
+
+## 📝 Feature Implementation Status
 
 - [x] User authentication (email/password + OAuth - GitHub & Google)
 - [x] Complete auth pages (sign in, sign up, sign out)
 - [x] Ask questions with Markdown support
-- [x] **Image upload** (up to 4 images per question using AWS S3)
-- [x] **GPT-5 Vision** (AI analyzes images in questions)
+- [x] Image upload (up to 4 images per question using AWS S3)
+- [x] GPT-5 Vision (AI analyzes images in questions)
 - [x] View questions list with pagination
 - [x] View question details with all answers
-- [x] AI answer generation with GPT-5
+- [x] AI answer generation with GPT-5 (background processing)
 - [x] Auto-tagging with GPT-5 Mini
-- [x] Email notifications (welcome, answer alerts)
-- [x] **Voting system** (upvote/downvote questions & answers)
-- [x] **Reputation system** (earn points from votes)
-- [x] **User profiles** (view user stats, questions, answers)
+- [x] Email notifications (welcome, answer alerts, accepted answer)
+- [x] Voting system (upvote/downvote questions & answers)
+- [x] Reputation system (earn points from votes)
+- [x] User profiles (view user stats, questions, answers)
+- [x] Profile editing (name, bio, location, etc.)
 - [x] Dynamic header (shows logged-in user)
-- [x] **Full-text search** (PostgreSQL to_tsvector search)
-- [x] **Rate limiting** (Upstash Redis-based protection)
-- [x] **Centralized query management** (TanStack Query with Zod validation)
-- [x] **Accept answers** (mark best answer, +15 reputation, email notification)
+- [x] Full-text search (PostgreSQL to_tsvector search)
+- [x] Rate limiting (Upstash Redis-based protection)
+- [x] Centralized query management (TanStack Query with Zod validation)
+- [x] Accept answers (mark best answer, +15 reputation, email notification)
+- [x] Delete answers (soft delete with confirmation)
 - [ ] Daily digest emails
 - [ ] Comments on answers
+- [ ] Question editing
+- [ ] User following
+- [ ] Tag pages with filtering
 
-## Deploy on Vercel
+---
 
-1. Push your code to GitHub
-2. Import project in Vercel
-3. Add environment variables in Vercel dashboard
-4. Install Inngest integration from Vercel marketplace
-5. Deploy!
+## 🚀 Deploy on Vercel
 
-## License
+### Deployment Steps
 
-MIT
+1. **Push code to GitHub**
+   ```bash
+   git init
+   git add .
+   git commit -m "Initial commit"
+   git branch -M main
+   git remote add origin https://github.com/yourusername/devquery.git
+   git push -u origin main
+   ```
+
+2. **Import project in Vercel**
+   - Go to [vercel.com](https://vercel.com)
+   - Click "Add New Project"
+   - Import your GitHub repository
+   - Select "Next.js" as framework
+
+3. **Add environment variables**
+   In Vercel project settings, add all variables from `.env.local`:
+   - `DATABASE_URL`
+   - `BETTER_AUTH_SECRET`
+   - `NEXT_PUBLIC_APP_URL` (set to your Vercel URL)
+   - `OPENAI_API_KEY`
+   - `INNGEST_EVENT_KEY`
+   - `INNGEST_SIGNING_KEY`
+   - All optional variables (S3, Redis, Resend, OAuth)
+
+4. **Install Inngest integration**
+   - In Vercel dashboard, go to Integrations
+   - Search for "Inngest"
+   - Install and connect to your project
+   - This automatically configures Inngest to receive events from your app
+
+5. **Deploy!**
+   - Click "Deploy"
+   - Wait for build to complete
+   - Visit your app at `https://your-project.vercel.app`
+
+### Production Checklist
+
+- [ ] Update `NEXT_PUBLIC_APP_URL` to production URL
+- [ ] Update OAuth redirect URIs to production URL
+- [ ] Configure custom domain (optional)
+- [ ] Set up S3 bucket CORS for production domain
+- [ ] Monitor Inngest dashboard for function errors
+- [ ] Set up error tracking (Sentry recommended)
+- [ ] Enable Vercel Analytics for performance monitoring
+- [ ] Test all features in production environment
+- [ ] Check rate limiting is working (Upstash Analytics)
+
+---
+
+## 🎓 Learning Resources
+
+### Official Documentation
+
+- [Next.js](https://nextjs.org/docs)
+- [TanStack Query](https://tanstack.com/query/latest)
+- [Drizzle ORM](https://orm.drizzle.team/docs/overview)
+- [Better Auth](https://better-auth.com)
+- [Inngest](https://www.inngest.com/docs)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [shadcn/ui](https://ui.shadcn.com)
+
+---
+
+## 💡 Student Exercise Ideas
+
+### Beginner Level
+1. Add user bio character counter (max 500 chars)
+2. Add "Sort by" dropdown (newest, most votes, most answers)
+3. Add loading skeletons instead of "Loading..."
+4. Add toast notifications for success/error
+
+### Intermediate Level
+1. Implement comments on answers
+2. Add question editing (only by author, within 5 minutes)
+3. Add user following system
+4. Create tag pages with filtered questions
+5. Add "My Questions" and "My Answers" tabs on profile
+
+### Advanced Level
+1. Implement daily digest emails (cron job with Inngest)
+2. Add full-text search with filters (tags, date range)
+3. Create admin dashboard (user management, content moderation)
+4. Add reputation leaderboard with weekly rankings
+5. Implement badge/achievement system
+6. Add code playground integration (embedded CodeSandbox)
+
+---
+
+## 📄 License
+
+MIT License - Feel free to use this project for learning and teaching purposes.
+
+---
+
+## 🙏 Credits
+
+Built for educational purposes.
+
+Technologies used: Next.js 16, React 19, Tailwind v4, TanStack Query, Drizzle ORM, Better Auth, Inngest, OpenAI GPT-5, AWS S3, Neon Postgres, and more.
+
+---
+
+**Happy Learning! 🚀**
