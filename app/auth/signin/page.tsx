@@ -1,11 +1,11 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn } from "@/lib/auth-client";
-import { signInSchema, type SignInFormData } from "@/lib/validations/auth";
+import type { SignInFormData } from "@/lib/types";
+import { signInSchema } from "@/lib/validations/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
@@ -64,12 +64,12 @@ export default function SignInPage() {
 
   return (
     <div className="max-w-md mx-auto mt-16">
-      <div className="bg-white dark:bg-zinc-800 p-8 rounded shadow-sm">
-        <h1 className="font-outfit text-[22px] leading-[1.45] font-bold text-zinc-800 dark:text-white mb-2 text-center">
+      <div className="bg-card p-8 rounded shadow-sm">
+        <h1 className="font-outfit text-[22px] leading-[1.45] font-bold text-card-foreground mb-2 text-center">
           Sign In
         </h1>
-        <p className="text-sm text-zinc-700 dark:text-zinc-400 mb-6 text-center">
-          Welcome back to AI Q&A Forum
+        <p className="text-sm text-muted-foreground mb-6 text-center">
+          Welcome back to DevQuery Forum
         </p>
 
         {error && (
@@ -129,7 +129,7 @@ export default function SignInPage() {
 
           <Button
             type="submit"
-            className="w-full bg-zinc-800 dark:bg-zinc-100 hover:bg-zinc-950 dark:hover:bg-white text-zinc-50 dark:text-zinc-800 font-semibold"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
             disabled={isSubmitting}
           >
             {isSubmitting ? "Signing in..." : "Sign In"}
@@ -138,10 +138,10 @@ export default function SignInPage() {
 
         <div className="relative my-6">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-zinc-200 dark:border-zinc-700"></div>
+            <div className="w-full border-t border-border"></div>
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400">
+            <span className="px-2 bg-card text-muted-foreground">
               Or continue with
             </span>
           </div>
@@ -192,9 +192,12 @@ export default function SignInPage() {
           </Button>
         </div>
 
-        <p className="text-center text-sm text-zinc-700 dark:text-zinc-400 mt-6">
+        <p className="text-center text-sm text-muted-foreground mt-6">
           Don't have an account?{" "}
-          <Link href="/auth/signup" className="text-zinc-800 dark:text-zinc-100 font-medium underline hover:no-underline">
+          <Link
+            href="/auth/signup"
+            className="text-foreground font-medium underline hover:no-underline"
+          >
             Sign up
           </Link>
         </p>

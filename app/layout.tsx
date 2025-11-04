@@ -1,7 +1,12 @@
 import { Header } from "@/components/header";
 import { Providers } from "@/components/providers";
 import type { Metadata } from "next";
-import { Inter, Bricolage_Grotesque, Outfit, Roboto_Mono } from "next/font/google";
+import {
+  Bricolage_Grotesque,
+  Inter,
+  Outfit,
+  Roboto_Mono,
+} from "next/font/google";
 import "./globals.css";
 
 const inter = Inter({
@@ -29,7 +34,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Q&A Forum - Get Instant AI-Powered Answers",
+  title: "DevQuery Forum - Get Instant AI-Powered Answers",
   description:
     "A modern Q&A platform where every question receives instant AI-generated answers, powered by GPT-5",
 };
@@ -42,7 +47,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${bricolage.variable} ${outfit.variable} ${robotoMono.variable} font-sans antialiased bg-zinc-50 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400`}
+        className={`${inter.variable} ${bricolage.variable} ${outfit.variable} ${robotoMono.variable} font-sans antialiased bg-background text-foreground`}
         suppressHydrationWarning
       >
         <Providers>

@@ -26,11 +26,11 @@ export const sendWelcomeEmail = inngest.createFunction(
 
     await step.run("send-email", async () => {
       const { data, error } = await resend.emails.send({
-        from: "AI Q&A Forum <onboarding@resend.dev>",
+        from: "DevQuery Forum <onboarding@resend.dev>",
         to: email,
-        subject: `Welcome to AI Q&A Forum, ${name}!`,
+        subject: `Welcome to DevQuery Forum, ${name}!`,
         html: `
-          <h1>Welcome to AI Q&A Forum!</h1>
+          <h1>Welcome to DevQuery Forum!</h1>
           <p>Hi ${name},</p>
           <p>Thanks for joining our community! Here's how to get started:</p>
           <ul>

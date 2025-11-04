@@ -21,5 +21,4 @@ export const submitAnswerSchema = z.object({
   images: z.array(z.string()),
 });
 
-export type AskQuestionFormData = z.infer<typeof askQuestionSchema>;
-export type SubmitAnswerFormData = z.infer<typeof submitAnswerSchema>;
+// Types are imported from @/lib/types

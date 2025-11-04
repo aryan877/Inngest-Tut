@@ -1,15 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import type { ImageUploadProps } from "@/lib/types";
 import { Loader2, Upload, X } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
-
-interface ImageUploadProps {
-  maxImages?: number;
-  onImagesChange: (imageUrls: string[]) => void;
-  existingImages?: string[];
-}
 
 export function ImageUpload({
   maxImages = 4,

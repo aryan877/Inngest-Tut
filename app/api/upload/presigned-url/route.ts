@@ -48,10 +48,13 @@ export async function POST(request: NextRequest) {
       expiresIn: 3600, // 1 hour
     });
 
+    // Construct the public S3 URL programmatically
+    const publicUrl = `https://${S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${key}`;
+
     return NextResponse.json({
       presignedUrl,
       key,
-      url: `${process.env.NEXT_PUBLIC_S3_BUCKET_URL}/${key}`,
+      url: publicUrl,
     });
   } catch (error) {
     console.error("Error generating presigned URL:", error);

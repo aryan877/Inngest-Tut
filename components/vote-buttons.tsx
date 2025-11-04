@@ -2,16 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { useSession } from "@/lib/auth-client";
+import type { VoteButtonsProps } from "@/lib/types";
 import { ArrowDown, ArrowUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-
-interface VoteButtonsProps {
-  itemId: number;
-  itemType: "question" | "answer";
-  initialVotes: number;
-  userVote?: "upvote" | "downvote" | null;
-}
 
 export function VoteButtons({
   itemId,

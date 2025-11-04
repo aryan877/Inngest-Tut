@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
-import { questions, user } from "@/lib/schema";
-import { or, ilike, eq } from "drizzle-orm";
+import { questions } from "@/lib/schema";
+import { ilike, or } from "drizzle-orm";
 import { NextRequest, NextResponse } from "next/server";
 
 // GET /api/search - Simple search for questions

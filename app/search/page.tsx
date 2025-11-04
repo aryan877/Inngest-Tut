@@ -3,28 +3,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { SearchResult } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 import { Loader2, Search } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-
-interface SearchResult {
-  id: number;
-  title: string;
-  body: string;
-  tags: string[];
-  images: string[];
-  views: number;
-  votes: number;
-  createdAt: string;
-  author: {
-    id: string;
-    name: string;
-    email: string;
-    image: string | null;
-  };
-}
 
 export default function SearchPage() {
   const router = useRouter();
@@ -83,7 +67,7 @@ export default function SearchPage() {
 
   return (
     <div className="max-w-4xl mx-auto">
-      <h1 className="font-heading text-3xl font-bold mb-6 text-zinc-800 dark:text-white">
+      <h1 className="font-heading text-3xl font-bold mb-6 text-foreground">
         Search Questions
       </h1>
 
@@ -99,7 +83,7 @@ export default function SearchPage() {
           <Button
             type="submit"
             disabled={loading}
-            className="bg-zinc-800 dark:bg-zinc-100 hover:bg-zinc-950 dark:hover:bg-white text-zinc-50 dark:text-zinc-800 font-semibold"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
           >
             {loading ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -112,7 +96,7 @@ export default function SearchPage() {
       </form>
 
       {searched && !loading && (
-        <p className="text-sm text-zinc-700 dark:text-zinc-400 mb-4">
+        <p className="text-sm text-muted-foreground mb-4">
           Found {results.length} result{results.length !== 1 ? "s" : ""}
         </p>
       )}
@@ -120,12 +104,12 @@ export default function SearchPage() {
       <div className="space-y-4">
         {results.map((result) => (
           <Link key={result.id} href={`/questions/${result.id}`}>
-            <div className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded p-4 hover:shadow-sm transition-shadow">
-              <h3 className="text-xl font-semibold mb-2 text-zinc-800 dark:text-white">
+            <div className="bg-card border border-border rounded p-4 hover:shadow-sm transition-shadow">
+              <h3 className="text-xl font-semibold mb-2 text-card-foreground">
                 {result.title}
               </h3>
 
-              <p className="text-sm text-zinc-700 dark:text-zinc-400 line-clamp-2 mb-3">
+              <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
                 {result.body.substring(0, 200)}...
               </p>
 
@@ -137,7 +121,7 @@ export default function SearchPage() {
                 ))}
               </div>
 
-              <div className="flex items-center gap-4 text-sm text-zinc-500 dark:text-zinc-400 flex-wrap">
+              <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                 <span className="font-medium">{result.votes} votes</span>
                 <span>{result.views} views</span>
                 <span>asked by {result.author.name}</span>
@@ -151,10 +135,10 @@ export default function SearchPage() {
 
         {searched && !loading && results.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-zinc-700 dark:text-zinc-400">
+            <p className="text-muted-foreground">
               No results found for "{query}"
             </p>
-            <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
+            <p className="text-sm text-muted-foreground mt-2">
               Try different keywords or ask a new question
             </p>
           </div>

@@ -1,19 +1,16 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { ImageUpload } from "@/components/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Card } from "@/components/ui/card";
-import { ImageUpload } from "@/components/image-upload";
-import {
-  askQuestionSchema,
-  type AskQuestionFormData,
-} from "@/lib/validations/question";
+import { Textarea } from "@/components/ui/textarea";
+import type { AskQuestionFormData } from "@/lib/types";
+import { askQuestionSchema } from "@/lib/validations/question";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 
 export default function AskQuestionPage() {
   const router = useRouter();
@@ -61,10 +58,10 @@ export default function AskQuestionPage() {
 
   return (
     <div className="max-w-3xl mx-auto">
-      <h1 className="font-heading text-3xl font-bold mb-2 text-zinc-800 dark:text-white">
+      <h1 className="font-heading text-3xl font-bold mb-2 text-foreground">
         Ask a Public Question
       </h1>
-      <p className="text-sm text-zinc-700 dark:text-zinc-400 mb-8">
+      <p className="text-sm text-muted-foreground mb-8">
         Get instant AI-powered answers and community insights
       </p>
 
@@ -120,11 +117,11 @@ export default function AskQuestionPage() {
           />
         </div>
 
-        <div className="bg-white dark:bg-zinc-800 p-4 border border-zinc-200 dark:border-zinc-700 rounded">
-          <h3 className="font-semibold mb-2 text-zinc-800 dark:text-white">
+        <div className="bg-card p-4 border border-border rounded">
+          <h3 className="font-semibold mb-2 text-card-foreground">
             What happens next?
           </h3>
-          <ul className="text-sm space-y-1 text-zinc-700 dark:text-zinc-400">
+          <ul className="text-sm space-y-1 text-muted-foreground">
             <li>• Your question will be posted immediately</li>
             <li>• AI will automatically generate tags</li>
             <li>• You'll receive an AI-generated answer within 30 seconds</li>
@@ -136,7 +133,7 @@ export default function AskQuestionPage() {
           <Button
             type="submit"
             disabled={isSubmitting}
-            className="bg-zinc-800 dark:bg-zinc-100 hover:bg-zinc-950 dark:hover:bg-white text-zinc-50 dark:text-zinc-800 font-semibold"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
           >
             {isSubmitting ? "Submitting..." : "Submit Question"}
           </Button>

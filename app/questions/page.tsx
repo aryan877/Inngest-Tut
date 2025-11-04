@@ -2,25 +2,10 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import type { Question } from "@/lib/types";
 import { useQuery } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
 import Link from "next/link";
-
-interface Question {
-  id: number;
-  title: string;
-  body: string;
-  tags: string[];
-  views: number;
-  votes: number;
-  aiAnswerGenerated: boolean;
-  createdAt: string;
-  author: {
-    id: string;
-    name: string;
-    image: string | null;
-  };
-}
 
 async function fetchQuestions(page: number = 1) {
   const res = await fetch(`/api/questions?page=${page}&limit=20`);
@@ -48,15 +33,15 @@ export default function QuestionsPage() {
     <div className="max-w-5xl mx-auto">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="font-heading text-3xl font-bold text-zinc-800 dark:text-white">
+          <h1 className="font-heading text-3xl font-bold text-foreground">
             All Questions
           </h1>
-          <p className="text-sm text-zinc-700 dark:text-zinc-400 mt-2">
+          <p className="text-sm text-muted-foreground mt-2">
             {data?.data?.pagination?.total || 0} questions
           </p>
         </div>
         <Link href="/questions/ask">
-          <Button className="bg-zinc-800 dark:bg-zinc-100 hover:bg-zinc-950 dark:hover:bg-white text-zinc-50 dark:text-zinc-800 font-semibold">
+          <Button className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold">
             Ask Question
           </Button>
         </Link>
@@ -66,15 +51,15 @@ export default function QuestionsPage() {
         {questions.map((question) => (
           <div
             key={question.id}
-            className="bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded p-6 hover:shadow-sm transition-shadow"
+            className="bg-card border border-border rounded p-6 hover:shadow-sm transition-shadow"
           >
             <Link href={`/questions/${question.id}`}>
-              <h2 className="text-xl font-semibold mb-2 text-zinc-800 dark:text-white hover:text-zinc-600 dark:hover:text-zinc-300 transition-colors">
+              <h2 className="text-xl font-semibold mb-2 text-card-foreground hover:text-muted-foreground transition-colors">
                 {question.title}
               </h2>
             </Link>
 
-            <p className="text-sm text-zinc-700 dark:text-zinc-400 line-clamp-2 mb-4">
+            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
               {question.body.substring(0, 200)}...
             </p>
 
@@ -87,7 +72,7 @@ export default function QuestionsPage() {
             </div>
 
             <div className="flex items-center justify-between text-sm flex-wrap gap-4">
-              <div className="flex items-center gap-4 text-zinc-500 dark:text-zinc-400">
+              <div className="flex items-center gap-4 text-muted-foreground">
                 <span className="font-medium">{question.votes} votes</span>
                 <span>{question.views} views</span>
                 {question.aiAnswerGenerated && (
@@ -100,10 +85,10 @@ export default function QuestionsPage() {
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-zinc-500 dark:text-zinc-400">
+                <span className="text-muted-foreground">
                   asked {formatDistanceToNow(new Date(question.createdAt))} ago
                 </span>
-                <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                <span className="font-medium text-foreground">
                   {question.author?.name}
                 </span>
               </div>
@@ -114,7 +99,7 @@ export default function QuestionsPage() {
 
       {questions.length === 0 && (
         <div className="text-center py-12">
-          <p className="text-zinc-700 dark:text-zinc-400">
+          <p className="text-muted-foreground">
             No questions yet. Be the first to ask!
           </p>
         </div>

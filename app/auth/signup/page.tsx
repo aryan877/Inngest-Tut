@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { signIn, signUp } from "@/lib/auth-client";
-import { signUpSchema, type SignUpFormData } from "@/lib/validations/auth";
+import type { SignUpFormData } from "@/lib/types";
+import { signUpSchema } from "@/lib/validations/auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
@@ -80,7 +81,7 @@ export default function SignUpPage() {
       <Card className="p-8">
         <h1 className="text-3xl font-bold mb-2 text-center">Create Account</h1>
         <p className="text-muted-foreground mb-6 text-center">
-          Join the AI Q&A community
+          Join the DevQuery community
         </p>
 
         {error && (

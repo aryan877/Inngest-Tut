@@ -1,5 +1,16 @@
-import { pgTable, text, timestamp, boolean, integer, serial, jsonb, pgEnum, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import {
+  boolean,
+  index,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  serial,
+  text,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 
 // ============================================
 // BETTER AUTH TABLES (Auto-generated schema)
@@ -95,51 +106,61 @@ export const userProfile = pgTable("user_profile", {
 });
 
 // Questions
-export const questions = pgTable("questions", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  body: text("body").notNull(),
-  authorId: text("author_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  images: jsonb("images").$type<string[]>().default([]).notNull(),
-  views: integer("views").default(0).notNull(),
-  votes: integer("votes").default(0).notNull(),
-  aiAnswerGenerated: boolean("ai_answer_generated").default(false).notNull(),
-  acceptedAnswerId: integer("accepted_answer_id"),
-  isDeleted: boolean("is_deleted").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-}, (table) => ({
-  authorIdx: index("questions_author_idx").on(table.authorId),
-  createdAtIdx: index("questions_created_at_idx").on(table.createdAt),
-}));
+export const questions = pgTable(
+  "questions",
+  {
+    id: serial("id").primaryKey(),
+    title: text("title").notNull(),
+    body: text("body").notNull(),
+    authorId: text("author_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    images: jsonb("images").$type<string[]>().default([]).notNull(),
+    views: integer("views").default(0).notNull(),
+    votes: integer("votes").default(0).notNull(),
+    aiAnswerGenerated: boolean("ai_answer_generated").default(false).notNull(),
+    acceptedAnswerId: integer("accepted_answer_id"),
+    isDeleted: boolean("is_deleted").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => ({
+    authorIdx: index("questions_author_idx").on(table.authorId),
+    createdAtIdx: index("questions_created_at_idx").on(table.createdAt),
+  })
+);
 
 // Answers
-export const answers = pgTable("answers", {
-  id: serial("id").primaryKey(),
-  questionId: integer("question_id")
-    .notNull()
-    .references(() => questions.id, { onDelete: "cascade" }),
-  content: text("content").notNull(),
-  images: jsonb("images").$type<string[]>().default([]).notNull(),
-  authorId: text("author_id").references(() => user.id, { onDelete: "set null" }),
-  isAiGenerated: boolean("is_ai_generated").default(false).notNull(),
-  votes: integer("votes").default(0).notNull(),
-  isAccepted: boolean("is_accepted").default(false).notNull(),
-  isDeleted: boolean("is_deleted").default(false).notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-}, (table) => ({
-  questionIdx: index("answers_question_idx").on(table.questionId),
-  authorIdx: index("answers_author_idx").on(table.authorId),
-}));
+export const answers = pgTable(
+  "answers",
+  {
+    id: serial("id").primaryKey(),
+    questionId: integer("question_id")
+      .notNull()
+      .references(() => questions.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    images: jsonb("images").$type<string[]>().default([]).notNull(),
+    authorId: text("author_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    isAiGenerated: boolean("is_ai_generated").default(false).notNull(),
+    votes: integer("votes").default(0).notNull(),
+    isAccepted: boolean("is_accepted").default(false).notNull(),
+    isDeleted: boolean("is_deleted").default(false).notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+  },
+  (table) => ({
+    questionIdx: index("answers_question_idx").on(table.questionId),
+    authorIdx: index("answers_author_idx").on(table.authorId),
+  })
+);
 
 // Tags
 export const tags = pgTable("tags", {
@@ -152,50 +173,68 @@ export const tags = pgTable("tags", {
 });
 
 // Question Tags Junction Table
-export const questionTags = pgTable("question_tags", {
-  questionId: integer("question_id")
-    .notNull()
-    .references(() => questions.id, { onDelete: "cascade" }),
-  tagId: integer("tag_id")
-    .notNull()
-    .references(() => tags.id, { onDelete: "cascade" }),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => ({
-  pk: uniqueIndex("question_tags_pkey").on(table.questionId, table.tagId),
-  questionIdx: index("question_tags_question_idx").on(table.questionId),
-  tagIdx: index("question_tags_tag_idx").on(table.tagId),
-}));
+export const questionTags = pgTable(
+  "question_tags",
+  {
+    questionId: integer("question_id")
+      .notNull()
+      .references(() => questions.id, { onDelete: "cascade" }),
+    tagId: integer("tag_id")
+      .notNull()
+      .references(() => tags.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    pk: uniqueIndex("question_tags_pkey").on(table.questionId, table.tagId),
+    questionIdx: index("question_tags_question_idx").on(table.questionId),
+    tagIdx: index("question_tags_tag_idx").on(table.tagId),
+  })
+);
 
 // Votes
 export const questionVoteEnum = pgEnum("vote_type", ["upvote", "downvote"]);
 
-export const questionVotes = pgTable("question_votes", {
-  id: serial("id").primaryKey(),
-  questionId: integer("question_id")
-    .notNull()
-    .references(() => questions.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  voteType: questionVoteEnum("vote_type").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => ({
-  uniqueVote: uniqueIndex("unique_question_vote").on(table.questionId, table.userId),
-}));
+export const questionVotes = pgTable(
+  "question_votes",
+  {
+    id: serial("id").primaryKey(),
+    questionId: integer("question_id")
+      .notNull()
+      .references(() => questions.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    voteType: questionVoteEnum("vote_type").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueVote: uniqueIndex("unique_question_vote").on(
+      table.questionId,
+      table.userId
+    ),
+  })
+);
 
-export const answerVotes = pgTable("answer_votes", {
-  id: serial("id").primaryKey(),
-  answerId: integer("answer_id")
-    .notNull()
-    .references(() => answers.id, { onDelete: "cascade" }),
-  userId: text("user_id")
-    .notNull()
-    .references(() => user.id, { onDelete: "cascade" }),
-  voteType: questionVoteEnum("vote_type").notNull(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-}, (table) => ({
-  uniqueVote: uniqueIndex("unique_answer_vote").on(table.answerId, table.userId),
-}));
+export const answerVotes = pgTable(
+  "answer_votes",
+  {
+    id: serial("id").primaryKey(),
+    answerId: integer("answer_id")
+      .notNull()
+      .references(() => answers.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    voteType: questionVoteEnum("vote_type").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    uniqueVote: uniqueIndex("unique_answer_vote").on(
+      table.answerId,
+      table.userId
+    ),
+  })
+);
 
 // Notifications
 export const notificationTypeEnum = pgEnum("notification_type", [

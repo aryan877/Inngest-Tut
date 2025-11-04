@@ -1,4 +1,4 @@
-# AI Q&A Forum
+# DevQuery Forum
 
 A modern, Stack Overflow-style Q&A platform where every question receives instant AI-generated answers through background processing, while maintaining the ability for human responses.
 
@@ -20,6 +20,7 @@ A modern, Stack Overflow-style Q&A platform where every question receives instan
 ## Tech Stack
 
 ### Frontend
+
 - Next.js 16 (App Router, TypeScript)
 - Tailwind CSS v4
 - shadcn/ui components
@@ -27,6 +28,7 @@ A modern, Stack Overflow-style Q&A platform where every question receives instan
 - React Hook Form with Zod validation
 
 ### Backend
+
 - Node.js 20+ (Next.js API Routes)
 - TypeScript 5.3+
 - Better Auth v1.3+
@@ -35,6 +37,7 @@ A modern, Stack Overflow-style Q&A platform where every question receives instan
 - Inngest v3.0+ (background jobs)
 
 ### AI & Services
+
 - OpenAI GPT-5 (main answers with vision support) & GPT-5 Mini (tagging)
 - AWS S3 (image storage with presigned URLs)
 - Upstash Redis (rate limiting)
@@ -57,6 +60,7 @@ A modern, Stack Overflow-style Q&A platform where every question receives instan
 ### Installation
 
 1. **Install dependencies**
+
    ```bash
    npm install
    ```
@@ -72,6 +76,7 @@ A modern, Stack Overflow-style Q&A platform where every question receives instan
    Required environment variables:
    - `DATABASE_URL`: Your Neon Postgres connection string
    - `BETTER_AUTH_SECRET`: Generate with `openssl rand -base64 32`
+   - `NEXT_PUBLIC_APP_URL`: Your app URL (e.g., http://localhost:3000)
    - `OPENAI_API_KEY`: Your OpenAI API key
    - `INNGEST_EVENT_KEY`: From Inngest dashboard
    - `INNGEST_SIGNING_KEY`: From Inngest dashboard
@@ -80,7 +85,6 @@ A modern, Stack Overflow-style Q&A platform where every question receives instan
    - `AWS_ACCESS_KEY_ID`: AWS access key
    - `AWS_SECRET_ACCESS_KEY`: AWS secret key
    - `AWS_S3_BUCKET_NAME`: S3 bucket name
-   - `NEXT_PUBLIC_S3_BUCKET_URL`: Public S3 bucket URL
    - `UPSTASH_REDIS_REST_URL`: Upstash Redis REST URL
    - `UPSTASH_REDIS_REST_TOKEN`: Upstash Redis REST token
 
@@ -91,12 +95,14 @@ A modern, Stack Overflow-style Q&A platform where every question receives instan
 3. **Setup database**
 
    Generate and run database migrations:
+
    ```bash
    npm run db:generate
    npm run db:push
    ```
 
 4. **Run development server**
+
    ```bash
    npm run dev
    ```
@@ -106,6 +112,7 @@ A modern, Stack Overflow-style Q&A platform where every question receives instan
 5. **Setup Inngest Dev Server** (optional for local development)
 
    In a separate terminal:
+
    ```bash
    npx inngest-cli@latest dev
    ```
