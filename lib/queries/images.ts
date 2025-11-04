@@ -19,9 +19,9 @@ const getImageUrl = async ({ key }: ImageUrlRequest): Promise<ImageUrlResponse> 
 
 export const useImageUrl = (key: string) => {
   return useQuery({
-    queryKey: queryKeys.imageUrl(key),
+    queryKey: queryKeys.images.url(key),
     queryFn: () => getImageUrl({ key }),
-    enabled: !!key, // Only run query if key exists
+    enabled: !!key,
     staleTime: 1000 * 60 * 60, // 1 hour - image URLs don't change frequently
   });
 };
@@ -29,7 +29,7 @@ export const useImageUrl = (key: string) => {
 export const useImageUrls = (keys: string[]) => {
   return useQueries({
     queries: keys.map((key) => ({
-      queryKey: queryKeys.imageUrl(key),
+      queryKey: queryKeys.images.url(key),
       queryFn: () => getImageUrl({ key }),
       enabled: !!key,
       staleTime: 1000 * 60 * 60, // 1 hour

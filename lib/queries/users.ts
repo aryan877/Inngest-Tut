@@ -13,9 +13,9 @@ const getUser = async (id: string): Promise<UserResponse> =>
 // Query hooks
 export const useUser = (id: string) => {
   return useQuery({
-    queryKey: queryKeys.user(id),
+    queryKey: queryKeys.users.detail(id),
     queryFn: () => getUser(id),
-    enabled: !!id, // Only run query if id exists
+    enabled: !!id,
     staleTime: 1000 * 60 * 10, // 10 minutes
   });
 };

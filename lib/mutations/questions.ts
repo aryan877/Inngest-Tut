@@ -22,7 +22,7 @@ export const useCreateQuestion = () => {
     mutationFn: createQuestion,
     onSuccess: (response) => {
       // Invalidate questions list to refresh
-      queryClient.invalidateQueries({ queryKey: queryKeys.questions });
+      queryClient.invalidateQueries({ queryKey: queryKeys.questions.lists() });
 
       // Navigate to the new question
       router.push(`/questions/${response.data.id}`);

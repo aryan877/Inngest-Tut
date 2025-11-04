@@ -7,6 +7,7 @@ interface VoteData {
   itemId: string;
   itemType: "question" | "answer";
   voteType: "upvote" | "downvote";
+  questionId?: string; // Required for answer votes to invalidate the parent question
 }
 
 export const useVote = () => {
@@ -34,13 +35,18 @@ export const useVote = () => {
         }),
       });
     },
-    onSuccess: (_, { itemId, itemType }) => {
+    onSuccess: (_, { itemId, itemType, questionId }) => {
       // Invalidate related queries
       if (itemType === "question") {
-        queryClient.invalidateQueries({ queryKey: queryKeys.question(itemId) });
-        queryClient.invalidateQueries({ queryKey: queryKeys.questions });
+        queryClient.invalidateQueries({ queryKey: queryKeys.questions.detail(itemId) });
+        queryClient.invalidateQueries({ queryKey: queryKeys.questions.lists() });
+      } else if (itemType === "answer") {
+        queryClient.invalidateQueries({ queryKey: queryKeys.answers.detail(itemId) });
+        // Invalidate the parent question if questionId is provided
+        if (questionId) {
+          queryClient.invalidateQueries({ queryKey: queryKeys.questions.detail(questionId) });
+        }
       }
-      // You might want to handle answer votes differently if needed
     },
     onError: (error) => {
       console.error("Failed to vote:", error);

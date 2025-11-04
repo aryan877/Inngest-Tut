@@ -22,7 +22,7 @@ export const useCreateAnswer = () => {
     },
     onSuccess: (_, { questionId }) => {
       // Invalidate the specific question to refresh answers
-      queryClient.invalidateQueries({ queryKey: queryKeys.question(questionId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.questions.detail(questionId) });
     },
     onError: (error) => {
       console.error("Failed to create answer:", error);

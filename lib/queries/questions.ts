@@ -30,7 +30,7 @@ const getQuestion = async (id: string): Promise<QuestionResponse> =>
 // Query hooks
 export const useQuestions = (page: number = 1) => {
   return useQuery({
-    queryKey: [...queryKeys.questions, page],
+    queryKey: queryKeys.questions.list({ page, limit: 20 }),
     queryFn: () => getQuestions(page),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -38,9 +38,9 @@ export const useQuestions = (page: number = 1) => {
 
 export const useQuestion = (id: string) => {
   return useQuery({
-    queryKey: queryKeys.question(id),
+    queryKey: queryKeys.questions.detail(id),
     queryFn: () => getQuestion(id),
-    enabled: !!id, // Only run query if id exists
+    enabled: !!id,
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 };

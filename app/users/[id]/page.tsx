@@ -1,10 +1,8 @@
 "use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { useUser } from "@/lib/queries";
 import { formatDistanceToNow } from "date-fns";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 
 export default function UserProfilePage() {
@@ -21,7 +19,8 @@ export default function UserProfilePage() {
     return <div className="max-w-5xl mx-auto">Error loading profile</div>;
   }
 
-  const { user, profile, questions, answers } = data.data;
+  const userData = data.data;
+  const profile = userData.profile;
 
   return (
     <div className="max-w-5xl mx-auto">
@@ -29,15 +28,15 @@ export default function UserProfilePage() {
       <div className="bg-card p-8 mb-8 rounded shadow-sm">
         <div className="flex items-start gap-6">
           <Avatar className="h-24 w-24">
-            <AvatarImage src={user.image || undefined} alt={user.name} />
+            <AvatarImage src={userData.image || undefined} alt={userData.name} />
             <AvatarFallback className="text-2xl bg-muted text-foreground">
-              {user.name.charAt(0).toUpperCase()}
+              {userData.name.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
 
           <div className="flex-1">
             <h1 className="font-outfit text-3xl font-bold mb-2 text-card-foreground">
-              {user.name}
+              {userData.name}
             </h1>
             {profile?.bio && (
               <p className="text-sm text-muted-foreground mb-4">
@@ -66,7 +65,7 @@ export default function UserProfilePage() {
               </div>
               <div>
                 <div className="text-sm font-medium text-card-foreground">
-                  {formatDistanceToNow(new Date(user.createdAt))} ago
+                  {formatDistanceToNow(new Date(userData.createdAt))} ago
                 </div>
                 <div className="text-sm text-muted-foreground">Member for</div>
               </div>
@@ -105,90 +104,26 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      {/* Questions and Answers */}
+      {/* User Stats */}
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Recent Questions */}
-        <div>
-          <h2 className="font-heading text-2xl font-bold mb-4 text-card-foreground">
-            Recent Questions
+        <div className="bg-card p-6 border border-border rounded">
+          <h2 className="font-heading text-xl font-bold mb-4 text-card-foreground">
+            Questions
           </h2>
-          <div className="space-y-4">
-            {questions && questions.length > 0 ? (
-              questions.map((question: any) => (
-                <div
-                  key={question.id}
-                  className="bg-card p-4 border border-border rounded hover:shadow-sm transition-shadow"
-                >
-                  <Link href={`/questions/${question.id}`}>
-                    <h3 className="font-semibold mb-2 text-card-foreground hover:text-muted-foreground transition-colors">
-                      {question.title}
-                    </h3>
-                  </Link>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="font-medium">{question.votes} votes</span>
-                    <span>{question.views} views</span>
-                    <span>
-                      {formatDistanceToNow(new Date(question.createdAt))} ago
-                    </span>
-                  </div>
-                  {question.tags && question.tags.length > 0 && (
-                    <div className="flex gap-2 mt-2 flex-wrap">
-                      {question.tags.slice(0, 3).map((tag: string) => (
-                        <Badge
-                          key={tag}
-                          variant="secondary"
-                          className="text-xs"
-                        >
-                          {tag}
-                        </Badge>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground">No questions yet</p>
-            )}
+          <div className="text-3xl font-bold text-card-foreground mb-2">
+            {profile?.questionsCount || 0}
           </div>
+          <p className="text-sm text-muted-foreground">Total questions asked</p>
         </div>
 
-        {/* Recent Answers */}
-        <div>
-          <h2 className="font-heading text-2xl font-bold mb-4 text-card-foreground">
-            Recent Answers
+        <div className="bg-card p-6 border border-border rounded">
+          <h2 className="font-heading text-xl font-bold mb-4 text-card-foreground">
+            Answers
           </h2>
-          <div className="space-y-4">
-            {answers && answers.length > 0 ? (
-              answers.map((answer: any) => (
-                <div
-                  key={answer.id}
-                  className="bg-card p-4 border border-border rounded hover:shadow-sm transition-shadow"
-                >
-                  <Link href={`/questions/${answer.question.id}`}>
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Answered: {answer.question.title}
-                    </div>
-                  </Link>
-                  <div className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                    {answer.content.substring(0, 150)}...
-                  </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="font-medium">{answer.votes} votes</span>
-                    <span>
-                      {formatDistanceToNow(new Date(answer.createdAt))} ago
-                    </span>
-                    {answer.isAiGenerated && (
-                      <Badge variant="outline" className="text-xs">
-                        AI
-                      </Badge>
-                    )}
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-muted-foreground">No answers yet</p>
-            )}
+          <div className="text-3xl font-bold text-card-foreground mb-2">
+            {profile?.answersCount || 0}
           </div>
+          <p className="text-sm text-muted-foreground">Total answers provided</p>
         </div>
       </div>
     </div>

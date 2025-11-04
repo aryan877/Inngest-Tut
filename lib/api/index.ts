@@ -23,27 +23,61 @@ export async function apiRequest<T>(
   return response.json();
 }
 
-// Query key factory
+// Hierarchical query key factory following TanStack Query best practices
 export const queryKeys = {
-  questions: ["questions"] as const,
-  question: (id: string) => ["question", id] as const,
-  user: (id: string) => ["user", id] as const,
-  search: (query: string) => ["search", query] as const,
-  imageUrl: (key: string) => ["image-url", key] as const,
-  imageUrls: (keys: string[]) => ["image-urls", keys] as const,
-};
+  // Question-related keys
+  questions: {
+    all: ["questions"] as const,
+    lists: () => [...queryKeys.questions.all, "list"] as const,
+    list: (filters: { page?: number; limit?: number; tag?: string }) =>
+      [...queryKeys.questions.lists(), filters] as const,
+    details: () => [...queryKeys.questions.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.questions.details(), id] as const,
+    search: (query: string) =>
+      [...queryKeys.questions.all, "search", query] as const,
+  },
 
+  // User-related keys
+  users: {
+    all: ["users"] as const,
+    details: () => [...queryKeys.users.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.users.details(), id] as const,
+    profile: (id: string) =>
+      [...queryKeys.users.detail(id), "profile"] as const,
+  },
+
+  // Answer-related keys
+  answers: {
+    all: ["answers"] as const,
+    lists: () => [...queryKeys.answers.all, "list"] as const,
+    list: (questionId: string) =>
+      [...queryKeys.answers.lists(), questionId] as const,
+    details: () => [...queryKeys.answers.all, "detail"] as const,
+    detail: (id: string) => [...queryKeys.answers.details(), id] as const,
+  },
+
+  // Tag-related keys
+  tags: {
+    all: ["tags"] as const,
+    lists: () => [...queryKeys.tags.all, "list"] as const,
+    detail: (id: string) => [...queryKeys.tags.all, "detail", id] as const,
+  },
+
+  // Image-related keys
+  images: {
+    url: (key: string) => ["images", "url", key] as const,
+    urls: (keys: string[]) => ["images", "urls", keys] as const,
+  },
+} as const;
 
 // Import Drizzle schema types (type-safe from actual database schema)
-import type { answers, questions, user } from "@/lib/schema";
+import type { answers, questions, tags, user, userProfile } from "@/lib/schema";
 
 // Use Drizzle's built-in type inference - no duplication needed!
 export type User = typeof user.$inferSelect;
 export type Question = typeof questions.$inferSelect;
 export type Answer = typeof answers.$inferSelect;
-
-// Import tag types from schema
-import type { tags } from "@/lib/schema";
+export type UserProfile = typeof userProfile.$inferSelect;
 export type Tag = typeof tags.$inferSelect;
 
 // API response types with populated relationships (as expected by components)
@@ -56,17 +90,11 @@ export type AnswerWithAuthor = Omit<Answer, "authorId"> & {
   author: User | null; // Populated from authorId relationship (nullable)
 };
 
-export type UserWithProfile = {
-  user: User; // Main user object
-  profile?: {
-    reputation: number;
-    questionsCount: number;
-    answersCount: number;
-    bio?: string;
-    location?: string;
-    website?: string;
-    githubHandle?: string;
+// Use Drizzle relations for type-safe user with profile
+export type UserWithProfile = User & {
+  profile?: UserProfile | null;
+  _count?: {
+    questions: number;
+    answers: number;
   };
-  questions: QuestionWithAuthor[];
-  answers: AnswerWithAuthor[];
 };

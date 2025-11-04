@@ -17,9 +17,9 @@ const search = async (query: string): Promise<SearchResponse> =>
 // Query hooks
 export const useSearch = (query: string) => {
   return useQuery({
-    queryKey: queryKeys.search(query),
+    queryKey: queryKeys.questions.search(query),
     queryFn: () => search(query),
-    enabled: !!query && query.trim().length > 0, // Only run query if query exists and not empty
+    enabled: !!query && query.trim().length > 0,
     staleTime: 1000 * 60 * 2, // 2 minutes
   });
 };
